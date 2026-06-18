@@ -25,7 +25,8 @@ export default function CreateContact() {
       await api.post("/contacts", { name, phone, tags });
       navigate("/");
     } catch (err) {
-      alert("Error adding contact. Make sure the backend is running and CORS is enabled.");
+      const message = err.response?.data?.error || "Make sure the backend is running and CORS is enabled.";
+      alert(`Error adding contact: ${message}`);
       console.error(err);
     } finally {
       setLoading(false);
