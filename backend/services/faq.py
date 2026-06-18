@@ -148,6 +148,9 @@ def handle_faq(msg, contact):
             contact.opted_in = False
             db.session.commit()
             send_text(phone, NOT_INTERESTED_MSG)
+        elif btn_text == "interested":
+            _replace_tag(contact, ["lead"], "Interested Lead")
+            send_text(phone, ENROLL_MSG)
         return
     else:
         return
