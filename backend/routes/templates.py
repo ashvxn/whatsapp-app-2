@@ -7,7 +7,12 @@ TEMPLATES = [
     {
         "name": "first",
         "type": "image",
-        "label": "Poster + Text Blast"
+        "label": "Poster + Text Blast (Kochi)"
+    },
+    {
+        "name": "second",
+        "type": "image",
+        "label": "Poster + Text Blast (Palakkad)"
     }
 ]
 
