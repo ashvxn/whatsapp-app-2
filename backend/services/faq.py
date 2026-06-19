@@ -40,7 +40,8 @@ BRANCHES_MSG = (
 ENROLL_MSG = (
     "Excellent choice! 🚀\n\n"
     "To enroll or get more details, contact our admissions team:\n\n"
-    "📞 *+91 96560 99333*\n"
+    "📞 Ernakulam: +91 96560 99333\n"
+    "📞 Palakkad: +91 96560 39944\n"
     "🌐 amd.edu.in\n\n"
     "We look forward to having you at AMD! 🎨"
 )
