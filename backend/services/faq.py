@@ -23,7 +23,8 @@ COURSES_MSG = (
 
 CONTACT_MSG = (
     "📞 *Contact AMD*\n\n"
-    "Phone / WhatsApp: *+91 96560 99333*\n"
+    "📞 Ernakulam: +91 96560 99333\n"
+    "📞 Palakkad: +91 96560 39944\n"
     "🌐 Website: amd.edu.in\n"
     "📸 Instagram: @amdcampus\n\n"
     "⏰ Mon – Sat: 9:00 AM – 6:00 PM"
