@@ -13,6 +13,25 @@ def slugify(text):
     text = text.lower()
     return re.sub(r'[^a-z0-9.]+', '_', text).strip('_')
 
+POSTERS_DIR = "static/posters"
+
+# List previously uploaded poster images (for the gallery / image picker)
+@campaigns_bp.route("/posters", methods=["GET"])
+def list_posters():
+    public_base = current_app.config.get("PUBLIC_URL", request.host_url).rstrip("/")
+    items = []
+    if os.path.isdir(POSTERS_DIR):
+        for filename in os.listdir(POSTERS_DIR):
+            filepath = os.path.join(POSTERS_DIR, filename)
+            if os.path.isfile(filepath):
+                items.append({
+                    "filename": filename,
+                    "url": f"{public_base}/static/posters/{filename}",
+                    "uploaded_at": datetime.utcfromtimestamp(os.path.getmtime(filepath)).isoformat()
+                })
+    items.sort(key=lambda x: x["uploaded_at"], reverse=True)
+    return jsonify(items)
+
 # List all campaigns
 @campaigns_bp.route("", methods=["GET"])
 def get_campaigns():

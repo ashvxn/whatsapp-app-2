@@ -20,6 +20,8 @@ export default function CreateCampaign() {
   const [variables, setVariables] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [posters, setPosters] = useState([]);
+  const [showGallery, setShowGallery] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +35,17 @@ export default function CreateCampaign() {
     api.get("/contacts")
       .then(res => setContacts(res.data))
       .catch(err => console.error("Could not fetch contacts", err));
+
+    api.get("/campaigns/posters")
+      .then(res => setPosters(res.data))
+      .catch(err => console.error("Could not fetch posters", err));
   }, []);
+
+  const pickPoster = (url) => {
+    setImageUrl(url);
+    setImageFile(null);
+    setShowGallery(false);
+  };
 
   const getVariableFields = () => {
     const t = templates.find(temp => temp.name === template);
@@ -193,6 +205,38 @@ export default function CreateCampaign() {
                 disabled={!!imageFile}
                 style={{ marginBottom: 0 }}
               />
+
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setShowGallery(s => !s)}
+                style={{ marginTop: "16px", fontSize: "13px" }}
+              >
+                {showGallery ? "Hide uploaded images" : `Browse uploaded images (${posters.length})`}
+              </button>
+
+              {showGallery && (
+                <div style={{
+                  display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "10px",
+                  marginTop: "16px", maxHeight: "260px", overflowY: "auto", padding: "4px"
+                }}>
+                  {posters.length === 0 && (
+                    <p style={{ color: "var(--text-muted)", fontSize: "13px", gridColumn: "1 / -1" }}>No images uploaded yet.</p>
+                  )}
+                  {posters.map(p => (
+                    <img
+                      key={p.filename}
+                      src={p.url}
+                      alt={p.filename}
+                      onClick={() => pickPoster(p.url)}
+                      style={{
+                        width: "100%", height: "90px", objectFit: "cover", borderRadius: "var(--radius)",
+                        cursor: "pointer", border: imageUrl === p.url ? "2px solid var(--primary)" : "2px solid transparent"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
