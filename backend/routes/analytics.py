@@ -38,7 +38,9 @@ def get_number_status():
 @analytics_bp.route("/overview", methods=["GET"])
 def get_overview():
     # ── Core KPIs ─────────────────────────────────────────────
-    total_spend      = db.session.query(func.sum(Campaign.total_estimated_cost)).scalar() or 0
+    total_spend      = db.session.query(func.sum(Campaign.total_estimated_cost)).filter(
+        Campaign.status.in_(['completed', 'partial'])
+    ).scalar() or 0
     total_campaigns  = Campaign.query.filter(Campaign.status.in_(['completed', 'partial', 'failed'])).count()
     total_sent       = CampaignRecipient.query.count()
     total_delivered  = CampaignRecipient.query.filter(CampaignRecipient.status.in_(['delivered', 'read'])).count()
