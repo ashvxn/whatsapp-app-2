@@ -41,6 +41,7 @@ def process_campaigns(app):
                             [campaign.payload.get("tag")] if campaign.payload.get("tag") else []
                         )
                         message = campaign.payload.get("message")
+                        variables = campaign.payload.get("variables")
                         image_url = campaign.payload.get("image_url")
 
                         required_tags_normalized = [t.strip().lower() for t in tags if t and t.strip()]
@@ -63,7 +64,8 @@ def process_campaigns(app):
                                 elif template_name == "CUSTOM_IMAGE":
                                     response = send_image(contact.phone, image_url, caption=message)
                                 else:
-                                    response = send_template(contact.phone, template_name, image_url, message)
+                                    body = variables if variables else message
+                                    response = send_template(contact.phone, template_name, image_url, body)
                                 msg_id = extract_message_id(response)
                                 return contact.id, msg_id, cost
 

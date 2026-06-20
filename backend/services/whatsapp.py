@@ -36,9 +36,14 @@ def send_template(to, template_name, image_url=None, body_text=None):
             "parameters": [{"type": "image", "image": {"link": image_url}}]
         })
     if body_text:
+        if isinstance(body_text, (list, tuple)):
+            # Positional variables ({{1}}..{{n}}), in order
+            parameters = [{"type": "text", "text": str(v)} for v in body_text]
+        else:
+            parameters = [{"type": "text", "parameter_name": "text_content", "text": body_text}]
         components.append({
             "type": "body",
-            "parameters": [{"type": "text", "parameter_name": "text_content", "text": body_text}]
+            "parameters": parameters
         })
 
     payload = {

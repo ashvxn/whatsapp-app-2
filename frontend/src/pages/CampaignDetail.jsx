@@ -108,7 +108,7 @@ export default function CampaignDetail() {
                                 {campaign.template_name}
                             </div>
                         )}
-                        {payload.message || "(No message content)"}
+                        {payload.message || (Array.isArray(payload.variables) ? payload.variables.filter(Boolean).join("\n\n") : "") || "(No message content)"}
                     </div>
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "4px", padding: "0 4px 4px", fontSize: "10px", color: "#667781" }}>
                         <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

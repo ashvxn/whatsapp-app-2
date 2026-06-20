@@ -1,6 +1,7 @@
 import os
 import uuid
 import re
+import json
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 from extensions import db
@@ -81,11 +82,19 @@ def create_campaign():
     if tags and not isinstance(tags, list):
         tags = [t for t in str(tags).split(",") if t.strip()]
 
+    variables = data.get("variables")
+    if variables and not isinstance(variables, list):
+        try:
+            variables = json.loads(variables)
+        except (TypeError, ValueError):
+            variables = None
+
     payload = {
         "tag": data.get("tag"),
         "tags": tags,
         "message": data.get("message"),
-        "image_url": data.get("image_url")
+        "image_url": data.get("image_url"),
+        "variables": variables
     }
 
     if image_file:

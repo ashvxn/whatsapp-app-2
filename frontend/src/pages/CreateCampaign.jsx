@@ -17,6 +17,7 @@ export default function CreateCampaign() {
   const [template, setTemplate] = useState("");
   const [tag, setTag] = useState("");
   const [message, setMessage] = useState("");
+  const [variables, setVariables] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,24 @@ export default function CreateCampaign() {
       .then(res => setContacts(res.data))
       .catch(err => console.error("Could not fetch contacts", err));
   }, []);
+
+  const getVariableFields = () => {
+    const t = templates.find(temp => temp.name === template);
+    return (t && t.variables) || null;
+  };
+
+  useEffect(() => {
+    const fields = getVariableFields();
+    setVariables(fields ? Array(fields.length).fill("") : []);
+  }, [template, templates]);
+
+  const updateVariable = (idx, value) => {
+    setVariables(prev => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  };
 
   const getUniqueTags = () => {
     const allTags = new Set();
@@ -55,8 +74,13 @@ export default function CreateCampaign() {
     } else {
       formData.append("tag", tag);
     }
-    formData.append("message", message);
-    
+    const variableFields = getVariableFields();
+    if (variableFields) {
+      formData.append("variables", JSON.stringify(variables));
+    } else {
+      formData.append("message", message);
+    }
+
     if (imageFile) {
         formData.append("image", imageFile);
     } else {
@@ -172,16 +196,34 @@ export default function CreateCampaign() {
             </div>
           )}
 
-          <div style={{ marginBottom: "24px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "14px" }}>Message Content</label>
-            <textarea
-              placeholder="Type your campaign text here..."
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              required
-              style={{ height: "160px", marginBottom: 0, resize: "vertical" }}
-            />
-          </div>
+          {getVariableFields() ? (
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "14px" }}>Template Variables</label>
+              {getVariableFields().map((fieldLabel, idx) => (
+                <div key={idx} style={{ marginBottom: "12px" }}>
+                  <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", color: "var(--text-muted)" }}>{fieldLabel}</label>
+                  <textarea
+                    placeholder={fieldLabel}
+                    value={variables[idx] || ""}
+                    onChange={e => updateVariable(idx, e.target.value)}
+                    required
+                    style={{ height: "60px", marginBottom: 0, resize: "vertical" }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "14px" }}>Message Content</label>
+              <textarea
+                placeholder="Type your campaign text here..."
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                required
+                style={{ height: "160px", marginBottom: 0, resize: "vertical" }}
+              />
+            </div>
+          )}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
             <Link to="/campaigns">
