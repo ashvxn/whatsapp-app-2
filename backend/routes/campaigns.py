@@ -2,7 +2,7 @@ import os
 import uuid
 import re
 import json
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from datetime import datetime
 from extensions import db
 from models import Campaign, CampaignRecipient, Contact
@@ -18,7 +18,7 @@ POSTERS_DIR = "static/posters"
 # List previously uploaded poster images (for the gallery / image picker)
 @campaigns_bp.route("/posters", methods=["GET"])
 def list_posters():
-    public_base = current_app.config.get("PUBLIC_URL", request.host_url).rstrip("/")
+    public_base = request.host_url.rstrip("/")
     items = []
     if os.path.isdir(POSTERS_DIR):
         for filename in os.listdir(POSTERS_DIR):
@@ -121,7 +121,7 @@ def create_campaign():
         filename = f"{uuid.uuid4().hex}_{safe_filename}"
         filepath = os.path.join("static/posters", filename)
         image_file.save(filepath)
-        public_base = current_app.config.get("PUBLIC_URL", request.host_url).rstrip("/")
+        public_base = request.host_url.rstrip("/")
         public_url = f"{public_base}/static/posters/{filename}"
         payload["image_url"] = public_url
 
