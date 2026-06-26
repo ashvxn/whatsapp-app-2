@@ -35,6 +35,44 @@ def get_number_status():
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 
+@analytics_bp.route("/diagnostics", methods=["GET"])
+def diagnostics():
+    phone_id = current_app.config.get("PHONE_NUMBER_ID")
+    token = current_app.config.get("WHATSAPP_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    result = {"phone_id": phone_id, "token_prefix": token[:12] + "..." if token else None}
+
+    # 1. Verify token + phone number
+    try:
+        r = requests.get(
+            f"https://graph.facebook.com/v21.0/{phone_id}",
+            params={"fields": "id,display_phone_number,verified_name,quality_rating,messaging_limit_tier,name_status"},
+            headers=headers, timeout=10
+        )
+        result["phone_check"] = {"status": r.status_code, "body": r.json()}
+    except Exception as e:
+        result["phone_check"] = {"error": str(e)}
+
+    # 2. Try to get templates via the business account linked to this phone
+    try:
+        r2 = requests.get(
+            f"https://graph.facebook.com/v21.0/{phone_id}",
+            params={"fields": "id,name_status,quality_rating"},
+            headers=headers, timeout=10
+        )
+        # Also try fetching WABA directly — works if token has waba_read permission
+        waba_r = requests.get(
+            "https://graph.facebook.com/v21.0/me",
+            params={"fields": "id,name"},
+            headers=headers, timeout=10
+        )
+        result["me"] = {"status": waba_r.status_code, "body": waba_r.json()}
+    except Exception as e:
+        result["me"] = {"error": str(e)}
+
+    return jsonify(result)
+
 @analytics_bp.route("/overview", methods=["GET"])
 def get_overview():
     # ── Core KPIs ─────────────────────────────────────────────

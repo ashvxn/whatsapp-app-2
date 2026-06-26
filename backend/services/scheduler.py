@@ -8,6 +8,13 @@ from models import Campaign, Contact, CampaignRecipient
 from services.whatsapp import send_template, send_text, send_image
 from services.pricing import get_conversation_cost
 
+TEMPLATE_LANGUAGES = {
+    "first":  "en",
+    "second": "en",
+    "third":  "en",
+    "fourth": "ml",
+}
+
 def _contact_has_all_tags(contact, required_tags_normalized):
     contact_tags = {t.strip().lower() for t in (contact.tags or "").split(",") if t.strip()}
     return all(rt in contact_tags for rt in required_tags_normalized)
@@ -56,6 +63,8 @@ def process_campaigns(app):
                         category = "service" if is_custom else "marketing"
                         template_name = campaign.template_name
 
+                        lang = TEMPLATE_LANGUAGES.get(template_name, "en")
+
                         def send_to_contact(contact):
                             with app.app_context():
                                 cost = get_conversation_cost(contact.phone, category)
@@ -65,15 +74,16 @@ def process_campaigns(app):
                                     response = send_image(contact.phone, image_url, caption=message)
                                 else:
                                     body = variables if variables else message
-                                    response = send_template(contact.phone, template_name, image_url, body)
+                                    response = send_template(contact.phone, template_name, image_url, body, language=lang)
                                 msg_id = extract_message_id(response)
-                                return contact.id, msg_id, cost
+                                return contact.id, msg_id, cost, response
 
+                        error_logged = False
                         with ThreadPoolExecutor(max_workers=10) as executor:
                             futures = {executor.submit(send_to_contact, c): c for c in contacts}
                             for future in as_completed(futures):
                                 try:
-                                    contact_id, msg_id, cost = future.result()
+                                    contact_id, msg_id, cost, response = future.result()
                                     total_campaign_cost += cost
                                     if msg_id:
                                         sent_count += 1
@@ -87,6 +97,9 @@ def process_campaigns(app):
                                         db.session.add(recipient)
                                     else:
                                         failed_count += 1
+                                        if not error_logged:
+                                            print(f"CAMPAIGN SEND FAILED — HTTP {response.status_code}: {response.text}")
+                                            error_logged = True
                                 except Exception as e:
                                     failed_count += 1
                                     print(f"Failed to send to contact: {e}")

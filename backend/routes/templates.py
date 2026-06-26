@@ -7,23 +7,27 @@ TEMPLATES = [
     {
         "name": "first",
         "type": "image",
+        "language": "en",
         "label": "Poster + Text Blast (Kochi)"
     },
     {
         "name": "second",
         "type": "image",
+        "language": "en",
         "label": "Poster + Text Blast (Palakkad)"
     },
     {
         "name": "third",
         "type": "image",
+        "language": "en",
         "label": "Kochi Descriptive",
         "variables": ["Paragraph 1", "Paragraph 2", "Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Paragraph 3"]
     },
     {
         "name": "fourth",
         "type": "image",
-        "label": "Palakkad Descriptive",
+        "language": "ml",
+        "label": "Palakkad Descriptive (Malayalam)",
         "variables": ["Paragraph 1", "Paragraph 2", "Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Paragraph 3"]
     }
 ]

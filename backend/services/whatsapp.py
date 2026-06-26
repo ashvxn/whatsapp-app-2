@@ -28,7 +28,7 @@ def send_api_request(payload, retries=3):
         return response
     return response
 
-def send_template(to, template_name, image_url=None, body_text=None):
+def send_template(to, template_name, image_url=None, body_text=None, language="en"):
     components = []
     if image_url:
         components.append({
@@ -52,7 +52,7 @@ def send_template(to, template_name, image_url=None, body_text=None):
         "type": "template",
         "template": {
             "name": template_name,
-            "language": {"code": "en"},
+            "language": {"code": language},
             "components": components
         }
     }
