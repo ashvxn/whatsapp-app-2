@@ -77,6 +77,15 @@ def create_app():
             response.headers["Content-Type"] = mime_type
         return response
 
+    # ✅ QUIZ IMAGES
+    @app.route("/quiz/<path:filename>")
+    def serve_quiz_image(filename):
+        response = make_response(send_from_directory("quiz", filename))
+        mime_type, _ = mimetypes.guess_type(filename)
+        if mime_type:
+            response.headers["Content-Type"] = mime_type
+        return response
+
     @app.route("/")
     def index():
         return app.send_static_file("index.html")

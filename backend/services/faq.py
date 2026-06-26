@@ -2,10 +2,12 @@ import re
 from services.whatsapp import send_text, send_interactive_buttons
 from models import Contact
 from extensions import db
+from services.quiz import start_quiz, handle_quiz_answer, get_quiz_state
 
 WELCOME_MSG = (
     "Welcome to *AMD* — an Adobe-accredited creative technology academy! 🎨\n\n"
     "We help students build careers in design, technology, and creativity.\n\n"
+    "💡 Tip: Type *quiz* to play a fun brain challenge!\n\n"
     "How can we help you today?"
 )
 
@@ -155,6 +157,27 @@ def handle_faq(msg, contact):
             send_text(phone, ENROLL_MSG)
         return
     else:
+        return
+
+    # --- QUIZ: handle answer if contact is mid-quiz ---
+    if contact and get_quiz_state(contact):
+        if btn_id:
+            consumed = handle_quiz_answer(phone, contact, btn_id)
+            if consumed:
+                return
+        else:
+            # Contact sent free text while mid-quiz — nudge them to pick from the list
+            send_text(phone, "👆 Please tap *Select Answer* above to choose your answer and continue the quiz!")
+            return
+
+    # --- QUIZ: keyword trigger ---
+    if btn_id is None and "quiz" in user_text.lower():
+        start_quiz(phone, contact)
+        return
+
+    # --- QUIZ: list reply with quiz option IDs (safety catch) ---
+    if btn_id and btn_id.startswith("quiz_"):
+        handle_quiz_answer(phone, contact, btn_id)
         return
 
     # Upgrade tag if contact has "lead + course 1" (they engaged)
