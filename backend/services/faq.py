@@ -32,14 +32,7 @@ CONTACT_MSG = (
     "⏰ Mon – Sat: 9:00 AM – 6:00 PM"
 )
 
-BRANCHES_MSG = (
-    "📍 *Our Branches*\n\n"
-    "🏢 *Kochi:*\nhttps://maps.app.goo.gl/tcYSYki8kzZS9Deh8\n\n"
-    "🏢 *Palakkad:*\nhttps://maps.app.goo.gl/iCRTUHeqRYWqjzj1A\n\n"
-    "Mon – Sat: 9:00 AM – 6:00 PM"
-)
-
-ENROLL_MSG = (
+ENQUIRY_MSG = (
     "Excellent choice! 🚀\n\n"
     "To enroll or get more details, contact our admissions team:\n\n"
     "📞 Ernakulam: +91 96560 99333\n"
@@ -48,26 +41,102 @@ ENROLL_MSG = (
     "We look forward to having you at AMD! 🎨"
 )
 
+FAQ_MSG = (
+    "📚 *Frequently Asked Questions*\n\n"
+    "*1. What is AMD?*\n"
+    "AMD is an Adobe-accredited academy specializing in creative technology education, helping students develop industry-relevant skills through practical training and real-world projects.\n\n"
+    "*2. What courses does AMD offer?*\n"
+    "• UI/UX Design\n"
+    "• Graphic Design\n"
+    "• Motion Graphics\n"
+    "• Video Editing\n"
+    "• Web Design & Development\n"
+    "• Product Design\n"
+    "• Creative Technology Programs\n\n"
+    "*3. Is AMD Adobe Accredited?*\n"
+    "Yes. AMD is an Adobe-accredited academy providing training aligned with industry standards.\n\n"
+    "*4. Who can join AMD courses?*\n"
+    "Plus Two graduates, degree holders, working professionals, freelancers, and anyone interested in creative technologies.\n\n"
+    "*5. Do I need previous experience?*\n"
+    "No. Our programs are designed for both beginners and learners with prior knowledge.\n\n"
+    "*6. Will I get hands-on project experience?*\n"
+    "Yes. Students work on practical assignments and real-world projects to build a strong portfolio.\n\n"
+    "*7. Does AMD provide placement assistance?*\n"
+    "Yes. We provide placement assistance, portfolio development, interview preparation, and career guidance.\n\n"
+    "*8. Why is a portfolio important?*\n"
+    "A portfolio showcases your skills to employers and is often more important than a resume in creative industries.\n\n"
+    "*9. Are the courses job-oriented?*\n"
+    "Yes. Our curriculum equips students with skills currently demanded by the industry.\n\n"
+    "*10. Will I receive a certificate?*\n"
+    "Yes. Students receive a course completion certificate upon successfully completing their training.\n\n"
+    "*11. Why choose AMD?*\n"
+    "✅ Adobe Accredited Academy\n"
+    "✅ Industry-Focused Curriculum\n"
+    "✅ Expert Faculty\n"
+    "✅ Real-Time Projects\n"
+    "✅ Portfolio Development\n"
+    "✅ Placement Assistance\n"
+    "✅ Career Guidance\n\n"
+    "*12. How can I enroll?*\n"
+    "Contact our admissions team through phone, WhatsApp, or visit our campus for a free career consultation."
+)
+
+TERMS_MSG = (
+    "📋 *AMD Student Policy*\n\n"
+    "*Admission Policy*\n"
+    "• Students must provide accurate information during admission.\n"
+    "• Admission is confirmed only after successful fee payment and document verification.\n"
+    "• AMD reserves the right to accept or reject applications based on eligibility criteria.\n\n"
+    "*Attendance Policy*\n"
+    "• Students are expected to attend all scheduled classes regularly.\n"
+    "• Excessive absenteeism may affect certification eligibility and placement assistance.\n\n"
+    "*Code of Conduct*\n"
+    "• Students must maintain respectful behavior toward faculty, staff, and fellow students.\n"
+    "• Any form of harassment, discrimination, or misconduct will not be tolerated.\n\n"
+    "*Academic Integrity*\n"
+    "• All assignments and projects must be the student's original work.\n"
+    "• Plagiarism may result in disciplinary action.\n\n"
+    "*Placement Assistance Policy*\n"
+    "• AMD provides placement assistance, career guidance, portfolio reviews, and interview preparation.\n"
+    "• Placement assistance does not guarantee employment.\n\n"
+    "*Fee Policy*\n"
+    "• Course fees must be paid according to the agreed payment schedule.\n"
+    "• Fees paid are non-transferable.\n\n"
+    "*Certification Policy*\n"
+    "• Certificates will be issued upon successful completion of all course requirements.\n\n"
+    "*Privacy Policy*\n"
+    "• Student information will be kept confidential and used only for academic and placement purposes.\n"
+    "• AMD will not share personal information with third parties without consent.\n\n"
+    "By enrolling at AMD, students acknowledge and agree to comply with all academy policies."
+)
+
 NOT_INTERESTED_MSG = (
     "No worries! 😊\n\n"
     "Feel free to reach us anytime at *+91 96560 99333*.\n\n"
     "Wishing you all the best!"
 )
 
+# Kept for template campaign button reply backwards-compatibility
+ENROLL_MSG = ENQUIRY_MSG
+
 MAIN_MENU_BUTTONS = [
-    {"id": "courses", "title": "Our Courses"},
+    {"id": "courses", "title": "Courses"},
     {"id": "contact", "title": "Contact Us"},
-    {"id": "branches", "title": "Our Branches"},
 ]
 
-COURSE_BUTTONS = [
-    {"id": "enroll", "title": "Enquire / Enroll"},
+COURSES_BUTTONS = [
+    {"id": "enquiry", "title": "Enquiry"},
+    {"id": "faq", "title": "FAQ"},
     {"id": "main_menu", "title": "Main Menu"},
 ]
 
-BACK_BUTTONS = [
+ENQUIRY_BUTTONS = [
+    {"id": "faq", "title": "FAQ"},
+    {"id": "terms", "title": "Terms & Conditions"},
+]
+
+BACK_TO_MAIN = [
     {"id": "main_menu", "title": "Main Menu"},
-    {"id": "courses", "title": "Our Courses"},
 ]
 
 NOT_INTERESTED_KEYWORDS = [
@@ -89,8 +158,6 @@ def _set_tags(contact, tags_str):
 
 
 def _replace_tag(contact, match_tags, new_tag):
-    """Swap any tag matching one of match_tags (case-insensitive) for new_tag,
-    keeping every other label untouched. Adds new_tag if no match was found."""
     if not contact:
         return
     raw_tags = [t.strip() for t in (contact.tags or "").split(",") if t.strip()]
@@ -145,7 +212,6 @@ def handle_faq(msg, contact):
         else:
             return
     elif msg_type == "button":
-        # Quick-reply button tap on a template (campaign) message
         btn_text = msg.get("button", {}).get("text", "").strip().lower()
         if btn_text == "not interested":
             _replace_tag(contact, ["lead"], "Rejected Lead")
@@ -154,7 +220,7 @@ def handle_faq(msg, contact):
             send_text(phone, NOT_INTERESTED_MSG)
         elif btn_text == "interested":
             _replace_tag(contact, ["lead"], "Interested Lead")
-            send_text(phone, ENROLL_MSG)
+            send_interactive_buttons(phone, ENQUIRY_MSG, ENQUIRY_BUTTONS)
         return
     else:
         return
@@ -166,7 +232,6 @@ def handle_faq(msg, contact):
             if consumed:
                 return
         else:
-            # Contact sent free text while mid-quiz — nudge them to pick from the list
             send_text(phone, "👆 Please tap *Select Answer* above to choose your answer and continue the quiz!")
             return
 
@@ -180,10 +245,8 @@ def handle_faq(msg, contact):
         handle_quiz_answer(phone, contact, btn_id)
         return
 
-    # Upgrade tag if contact has "lead + course 1" (they engaged)
     _check_engagement_upgrade(contact)
 
-    # Detect "not interested" from free text
     if btn_id is None and _is_not_interested(user_text):
         _set_tags(contact, "not_interested")
         contact.opted_in = False
@@ -191,22 +254,24 @@ def handle_faq(msg, contact):
         send_text(phone, NOT_INTERESTED_MSG)
         return
 
-    # Detect "interested" from free text
     if btn_id is None and _is_interested(user_text):
-        send_text(phone, ENROLL_MSG)
+        send_interactive_buttons(phone, ENQUIRY_MSG, ENQUIRY_BUTTONS)
         return
 
     # Button routing
     if btn_id == "courses":
-        send_interactive_buttons(phone, COURSES_MSG, COURSE_BUTTONS)
-    elif btn_id == "enroll":
-        send_text(phone, ENROLL_MSG)
+        send_interactive_buttons(phone, COURSES_MSG, COURSES_BUTTONS)
+    elif btn_id in ("enquiry", "enroll"):
+        send_interactive_buttons(phone, ENQUIRY_MSG, ENQUIRY_BUTTONS)
+    elif btn_id == "faq":
+        send_text(phone, FAQ_MSG)
+        send_interactive_buttons(phone, "Need more help?", BACK_TO_MAIN)
+    elif btn_id == "terms":
+        send_text(phone, TERMS_MSG)
+        send_interactive_buttons(phone, "Need more help?", BACK_TO_MAIN)
     elif btn_id == "contact":
-        send_interactive_buttons(phone, CONTACT_MSG, BACK_BUTTONS)
-    elif btn_id == "branches":
-        send_interactive_buttons(phone, BRANCHES_MSG, BACK_BUTTONS)
+        send_interactive_buttons(phone, CONTACT_MSG, BACK_TO_MAIN)
     elif btn_id == "main_menu":
         send_interactive_buttons(phone, "Here's what we can help you with:", MAIN_MENU_BUTTONS)
     else:
-        # First message or unrecognized text → show main menu
         send_interactive_buttons(phone, WELCOME_MSG, MAIN_MENU_BUTTONS)
