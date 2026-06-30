@@ -7,7 +7,7 @@ from services.quiz import start_quiz, handle_quiz_answer, get_quiz_state
 WELCOME_MSG = (
     "Welcome to *AMD* — an Adobe-accredited creative technology academy! 🎨\n\n"
     "We help students build careers in design, technology, and creativity.\n\n"
-    "💡 Tip: Type *quiz* to play a fun brain challenge!\n\n"
+    # "💡 Tip: Type *quiz* to play a fun brain challenge!\n\n"
     "How can we help you today?"
 )
 
