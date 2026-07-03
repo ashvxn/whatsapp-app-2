@@ -14,6 +14,7 @@ from routes.webhook import webhook
 from routes.analytics import analytics_bp
 from routes.calls import calls_bp
 from routes.auth import auth_bp
+from routes.reports import reports_bp
 from flask_cors import CORS
 
 
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(analytics_bp)
     app.register_blueprint(calls_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(reports_bp)
 
     @app.before_request
     def require_api_auth():
@@ -109,6 +111,17 @@ def create_app():
                     conn.execute(text("ALTER TABLE campaign ADD COLUMN created_at DATETIME"))
                     conn.commit()
                     print("Migration: added created_at column to campaign table")
+        except Exception as e:
+            print(f"Migration error: {e}")
+        # Migrate existing DBs: add age to scholarship_application if missing
+        try:
+            with db.engine.connect() as conn:
+                result = conn.execute(text("PRAGMA table_info(scholarship_application)"))
+                existing_columns = [row[1] for row in result.fetchall()]
+                if 'age' not in existing_columns:
+                    conn.execute(text("ALTER TABLE scholarship_application ADD COLUMN age INTEGER"))
+                    conn.commit()
+                    print("Migration: added age column to scholarship_application table")
         except Exception as e:
             print(f"Migration error: {e}")
 

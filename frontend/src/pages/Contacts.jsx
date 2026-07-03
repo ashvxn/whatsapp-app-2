@@ -16,6 +16,9 @@ const Icons = {
   Plus: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
   ),
+  Download: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+  ),
   Chevron: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
   ),
@@ -52,6 +55,7 @@ export default function Contacts() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [detailsModal, setDetailsModal] = useState(null); // { contact, data, error }
   const [idProofModal, setIdProofModal] = useState(null); // { contact, imageUrl, error }
+  const [downloadingReport, setDownloadingReport] = useState(false);
 
   useEffect(() => { setVisibleCount(12); }, [activeGroup, searchTerm]);
 
@@ -111,6 +115,25 @@ export default function Contacts() {
   const closeIdProofModal = () => {
     if (idProofModal?.imageUrl) URL.revokeObjectURL(idProofModal.imageUrl);
     setIdProofModal(null);
+  };
+
+  const downloadVerifiedLeadsReport = async () => {
+    setDownloadingReport(true);
+    try {
+      const res = await api.get("/reports/verified-leads", { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "verified_leads_report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Unable to generate the report. Please try again.");
+    } finally {
+      setDownloadingReport(false);
+    }
   };
 
   const handleTagClick = (tag, contact) => {
@@ -203,9 +226,19 @@ export default function Contacts() {
             Manage your contacts and follow up with interested leads.
           </p>
         </div>
-        <Link to="/add-contact">
-          <button className="btn-primary"><Icons.Plus /> Add New Lead</button>
-        </Link>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            className="btn-primary"
+            onClick={downloadVerifiedLeadsReport}
+            disabled={downloadingReport}
+            style={{ opacity: downloadingReport ? 0.7 : 1 }}
+          >
+            <Icons.Download /> {downloadingReport ? "Generating..." : "Download Report"}
+          </button>
+          <Link to="/add-contact">
+            <button className="btn-primary"><Icons.Plus /> Add New Lead</button>
+          </Link>
+        </div>
       </div>
 
       {/* SEARCH */}
@@ -472,7 +505,7 @@ export default function Contacts() {
               <div><strong>Phone:</strong> {detailsModal.data.phone_number || "—"}</div>
               <div><strong>Email:</strong> {detailsModal.data.email || "—"}</div>
               <div><strong>Location:</strong> {detailsModal.data.location || "—"}</div>
-              <div><strong>Qualification:</strong> {detailsModal.data.qualification || "—"}</div>
+              <div><strong>Age:</strong> {detailsModal.data.age ?? "—"}</div>
             </div>
           )}
         </Modal>

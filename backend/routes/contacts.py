@@ -77,7 +77,7 @@ def get_scholarship_details(id):
         "phone_number": app.phone_number,
         "email": app.email,
         "location": app.location,
-        "qualification": app.qualification,
+        "age": app.age,
         "status": app.status,
         "has_id_proof": bool(app.id_proof_path)
     })

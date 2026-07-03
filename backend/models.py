@@ -52,7 +52,8 @@ class ScholarshipApplication(db.Model):
     phone_number = db.Column(db.String(20))
     email = db.Column(db.String(120))
     location = db.Column(db.String(120))
-    qualification = db.Column(db.String(120))
+    qualification = db.Column(db.String(120))  # deprecated, replaced by age
+    age = db.Column(db.Integer)
     id_proof_path = db.Column(db.String(255))
     id_proof_media_id = db.Column(db.String(100))
     status = db.Column(db.String(30), default="awaiting_name")

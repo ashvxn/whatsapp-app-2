@@ -13,7 +13,7 @@ STEP_ORDER = [
     "awaiting_phone",
     "awaiting_email",
     "awaiting_location",
-    "awaiting_qualification",
+    "awaiting_age",
     "awaiting_id_proof",
 ]
 
@@ -22,8 +22,11 @@ FIELD_FOR_STEP = {
     "awaiting_phone": "phone_number",
     "awaiting_email": "email",
     "awaiting_location": "location",
-    "awaiting_qualification": "qualification",
+    "awaiting_age": "age",
 }
+
+AGE_MIN = 1
+AGE_MAX = 100
 
 TERMS_MSG = (
     "📋 *Terms & Conditions – AMD Free Hostel Campaign*\n\n"
@@ -52,14 +55,11 @@ PROMPTS = {
     ),
     "awaiting_phone": "Thanks! What's your *contact phone number*?",
     "awaiting_email": (
-        "Great. What's your *Email Address*?\n"
-        "Please provide an active email address, as all further communication will be sent via email."
+        "Great. What's your *Active Email Address*?\n"
+        "(please provide an active email address, as all further communication will be sent via email."
     ),
     "awaiting_location": "Got it. What's your *current location* (city/town)?",
-    "awaiting_qualification": (
-        "Almost done — what's your *highest qualification*? "
-        "(e.g. Class 12, Diploma, Degree)"
-    ),
+    "awaiting_age": "Almost done — what's your *age*?",
     "awaiting_id_proof": (
         "✅ Thanks, your details have been recorded!\n\n"
         "Now please upload a *Government-Issued ID Proof* that clearly displays:\n"
@@ -79,6 +79,10 @@ INVALID_MSGS = {
         "That doesn't look like a valid email address 🤔 "
         "Please enter a valid email (e.g. name@example.com)."
     ),
+    "awaiting_age": (
+        "That doesn't look like a valid age 🤔 "
+        f"Please enter a valid age ({AGE_MIN}-{AGE_MAX})."
+    ),
 }
 
 CANCEL_MSG = "Application cancelled. Type *hostel scholarship* anytime to start again."
@@ -88,8 +92,11 @@ ALREADY_APPLIED_MSG = (
     "+91 96560 99333"
 )
 COMPLETE_MSG = (
-    "🎉 Your ID proof has been received. Your Free Hostel Campaign application is now complete. "
-    "Our team will get back to you soon!"
+    "🎉 Thank you for submitting your ID proof!\n\n"
+    "Your document has been received successfully and is now under verification by our admissions team.\n\n"
+    "📧 Please keep an eye on your email inbox (and Spam/Junk folder), as all further communication regarding your verification status, eligibility, and the AMD Free Hostel campaign will be sent via email"
+    "If your application is approved, we'll contact you with the next steps as soon as possible.\n\n"
+    "Thank you for choosing AMD. We wish you the very best, and we look forward to welcoming you!"
 )
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -101,6 +108,11 @@ def _validate(step, text):
         return bool(PHONE_RE.match(text.strip()))
     if step == "awaiting_email":
         return bool(EMAIL_RE.match(text.strip()))
+    if step == "awaiting_age":
+        stripped = text.strip()
+        if not stripped.isdigit():
+            return False
+        return AGE_MIN <= int(stripped) <= AGE_MAX
     return bool(text.strip())
 
 
@@ -144,7 +156,7 @@ def start_scholarship(phone, contact):
         app.phone_number = None
         app.email = None
         app.location = None
-        app.qualification = None
+        app.age = None
     else:
         app = ScholarshipApplication(contact_id=contact.id, status="awaiting_name")
         db.session.add(app)
@@ -210,7 +222,8 @@ def handle_scholarship_message(phone, contact, msg_type, user_text, image_id):
         send_text(phone, INVALID_MSGS.get(step, "That doesn't look right, please try again."))
         return
 
-    setattr(app, FIELD_FOR_STEP[step], text)
+    value = int(text) if step == "awaiting_age" else text
+    setattr(app, FIELD_FOR_STEP[step], value)
     next_step = _next_step(step)
     app.status = next_step
     db.session.commit()
