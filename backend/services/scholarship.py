@@ -5,7 +5,7 @@ import mimetypes
 
 from extensions import db
 from models import ScholarshipApplication
-from services.whatsapp import send_text, download_media
+from services.whatsapp import send_text, send_interactive_buttons, download_media
 from services.tags import replace_tag, add_tag
 
 STEP_ORDER = [
@@ -25,27 +25,40 @@ FIELD_FOR_STEP = {
     "awaiting_qualification": "qualification",
 }
 
-CANCEL_HINT = "\n\n_Type *cancel* anytime to stop this application._"
+TERMS_MSG = (
+    "📋 *Terms & Conditions – AMD Free Hostel Campaign*\n\n"
+    "Thank you for your interest in the AMD Free Hostel Campaign! Please read the following terms carefully:\n\n"
+    "1. This offer is valid only for students aged 17–24 years.\n"
+    "2. Applicants must reside more than 30 km from our AMD campus Kochi (Kaloor).\n"
+    "3. The FREE hostel facility is available only to the first 50 eligible students who complete registration and fulfill all admission requirements.\n"
+    "4. Eligibility will be verified based on the address and documents submitted during the admission process.\n"
+    "5. Registration alone does not guarantee the offer. Admission confirmation and document verification are mandatory.\n"
+    "6. The eligibility cannot be transferred to another person.\n"
+    "7. This offer is applicable only for selected courses and intakes announced by AMD.\n"
+    "8. Students must complete the admission process within the timeline provided by the admissions team. Failure to do so may result in forfeiture of the offer.\n"
+    "9. AMD reserves the right to modify, withdraw, or discontinue the campaign at any time without prior notice.\n"
+    "10. The decision of AMD regarding eligibility and allotment of the free hostel facility will be final."
+)
+
+TERMS_BUTTONS = [
+    {"id": "scholarship_accept", "title": "Accept"},
+    {"id": "main_menu", "title": "Main Menu"},
+]
 
 PROMPTS = {
     "awaiting_name": (
-        "🎓 *Hostel Scholarship Application*\n\n"
-        "Let's get started! What's your *Full Name* (as per your government-issued ID)?"
-        + CANCEL_HINT
+        "✅ Thanks for accepting the terms! Let's get started.\n\n"
+        "What's your *Full Name* (as per your government-issued ID)?"
     ),
-    "awaiting_phone": "Thanks! What's your *contact phone number*?" + CANCEL_HINT,
+    "awaiting_phone": "Thanks! What's your *contact phone number*?",
     "awaiting_email": (
         "Great. What's your *Email Address*?\n"
         "Please provide an active email address, as all further communication will be sent via email."
-        + CANCEL_HINT
     ),
-    "awaiting_location": (
-        "Got it. What's your *current location* (city/town)?" + CANCEL_HINT
-    ),
+    "awaiting_location": "Got it. What's your *current location* (city/town)?",
     "awaiting_qualification": (
         "Almost done — what's your *highest qualification*? "
         "(e.g. Class 12, Diploma, Degree)"
-        + CANCEL_HINT
     ),
     "awaiting_id_proof": (
         "✅ Thanks, your details have been recorded!\n\n"
@@ -54,7 +67,6 @@ PROMPTS = {
         "• Date of Birth (DOB)\n"
         "• Residential Address\n\n"
         "(e.g. Aadhaar Card, Passport, Voter ID)"
-        + CANCEL_HINT
     ),
 }
 
@@ -62,12 +74,10 @@ INVALID_MSGS = {
     "awaiting_phone": (
         "That doesn't look like a valid phone number 🤔 "
         "Please enter a valid phone number (7-15 digits)."
-        + CANCEL_HINT
     ),
     "awaiting_email": (
         "That doesn't look like a valid email address 🤔 "
         "Please enter a valid email (e.g. name@example.com)."
-        + CANCEL_HINT
     ),
 }
 
@@ -78,7 +88,7 @@ ALREADY_APPLIED_MSG = (
     "+91 96560 99333"
 )
 COMPLETE_MSG = (
-    "🎉 Your ID proof has been received. Your Hostel Scholarship application is now complete. "
+    "🎉 Your ID proof has been received. Your Free Hostel Campaign application is now complete. "
     "Our team will get back to you soon!"
 )
 
@@ -108,6 +118,17 @@ def get_scholarship_state(contact):
     if app and app.status != "completed":
         return app.status
     return None
+
+
+def send_scholarship_terms(phone, contact):
+    if not contact:
+        return
+    app = ScholarshipApplication.query.filter_by(contact_id=contact.id).first()
+    if app and app.status == "completed":
+        send_text(phone, ALREADY_APPLIED_MSG)
+        return
+    send_text(phone, TERMS_MSG)
+    send_interactive_buttons(phone, "Do you accept these terms and conditions?", TERMS_BUTTONS)
 
 
 def start_scholarship(phone, contact):

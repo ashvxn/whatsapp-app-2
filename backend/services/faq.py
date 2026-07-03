@@ -5,6 +5,7 @@ from extensions import db
 from services.quiz import start_quiz, handle_quiz_answer, get_quiz_state
 from services.scholarship import (
     start_scholarship,
+    send_scholarship_terms,
     handle_scholarship_message,
     get_scholarship_state,
 )
@@ -239,7 +240,7 @@ def handle_faq(msg, contact):
 
     # --- SCHOLARSHIP: keyword trigger ---
     if btn_id is None and image_id is None and _is_scholarship_trigger(user_text):
-        start_scholarship(phone, contact)
+        send_scholarship_terms(phone, contact)
         return
 
     if image_id is not None:
@@ -272,6 +273,8 @@ def handle_faq(msg, contact):
     elif btn_id == "contact":
         send_interactive_buttons(phone, CONTACT_MSG, BACK_TO_MAIN)
     elif btn_id == "hostel_scholarship":
+        send_scholarship_terms(phone, contact)
+    elif btn_id == "scholarship_accept":
         start_scholarship(phone, contact)
     elif btn_id == "main_menu":
         send_interactive_buttons(phone, "Here's what we can help you with:", MAIN_MENU_BUTTONS)
