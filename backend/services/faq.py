@@ -128,7 +128,7 @@ ENROLL_MSG = ENQUIRY_MSG
 MAIN_MENU_BUTTONS = [
     {"id": "courses", "title": "Courses"},
     {"id": "contact", "title": "Contact Us"},
-    {"id": "hostel_scholarship", "title": "Hostel Scholarship"},
+    {"id": "hostel_scholarship", "title": "Free Hostel Campaign"},
 ]
 
 COURSES_BUTTONS = [

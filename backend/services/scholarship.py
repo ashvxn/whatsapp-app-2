@@ -25,22 +25,36 @@ FIELD_FOR_STEP = {
     "awaiting_qualification": "qualification",
 }
 
+CANCEL_HINT = "\n\n_Type *cancel* anytime to stop this application._"
+
 PROMPTS = {
     "awaiting_name": (
         "🎓 *Hostel Scholarship Application*\n\n"
-        "Let's get started! What's your *full name*?"
+        "Let's get started! What's your *Full Name* (as per your government-issued ID)?"
+        + CANCEL_HINT
     ),
-    "awaiting_phone": "Thanks! What's your *contact phone number*?",
-    "awaiting_email": "Great. What's your *email address*?",
-    "awaiting_location": "Got it. What's your *current location* (city/town)?",
+    "awaiting_phone": "Thanks! What's your *contact phone number*?" + CANCEL_HINT,
+    "awaiting_email": (
+        "Great. What's your *Email Address*?\n"
+        "Please provide an active email address, as all further communication will be sent via email."
+        + CANCEL_HINT
+    ),
+    "awaiting_location": (
+        "Got it. What's your *current location* (city/town)?" + CANCEL_HINT
+    ),
     "awaiting_qualification": (
         "Almost done — what's your *highest qualification*? "
         "(e.g. Class 12, Diploma, Degree)"
+        + CANCEL_HINT
     ),
     "awaiting_id_proof": (
         "✅ Thanks, your details have been recorded!\n\n"
-        "Now please upload a *photo of your ID proof* (Aadhaar, Voter ID, etc.) "
-        "to complete your application."
+        "Now please upload a *Government-Issued ID Proof* that clearly displays:\n"
+        "• Full Name\n"
+        "• Date of Birth (DOB)\n"
+        "• Residential Address\n\n"
+        "(e.g. Aadhaar Card, Passport, Voter ID)"
+        + CANCEL_HINT
     ),
 }
 
@@ -48,10 +62,12 @@ INVALID_MSGS = {
     "awaiting_phone": (
         "That doesn't look like a valid phone number 🤔 "
         "Please enter a valid phone number (7-15 digits)."
+        + CANCEL_HINT
     ),
     "awaiting_email": (
         "That doesn't look like a valid email address 🤔 "
         "Please enter a valid email (e.g. name@example.com)."
+        + CANCEL_HINT
     ),
 }
 
