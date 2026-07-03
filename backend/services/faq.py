@@ -128,6 +128,7 @@ ENROLL_MSG = ENQUIRY_MSG
 MAIN_MENU_BUTTONS = [
     {"id": "courses", "title": "Courses"},
     {"id": "contact", "title": "Contact Us"},
+    {"id": "hostel_scholarship", "title": "Hostel Scholarship"},
 ]
 
 COURSES_BUTTONS = [
@@ -270,6 +271,8 @@ def handle_faq(msg, contact):
         send_interactive_buttons(phone, "Need more help?", BACK_TO_MAIN)
     elif btn_id == "contact":
         send_interactive_buttons(phone, CONTACT_MSG, BACK_TO_MAIN)
+    elif btn_id == "hostel_scholarship":
+        start_scholarship(phone, contact)
     elif btn_id == "main_menu":
         send_interactive_buttons(phone, "Here's what we can help you with:", MAIN_MENU_BUTTONS)
     else:
