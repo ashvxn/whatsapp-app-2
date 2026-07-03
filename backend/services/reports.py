@@ -7,6 +7,15 @@ from fpdf import FPDF
 from models import Contact, ScholarshipApplication
 
 
+class BrandedPDF(FPDF):
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(190, 190, 190)  # faint gray
+        self.cell(0, 10, "Powered by Obsidyne", align="C")
+        self.set_text_color(0, 0, 0)  # restore for any subsequent content
+
+
 def _safe_text(value):
     if value is None or value == "":
         return "-"
@@ -69,7 +78,7 @@ def generate_verified_leads_report():
         .all()
     )
 
-    pdf = FPDF()
+    pdf = BrandedPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
     if not contacts:
