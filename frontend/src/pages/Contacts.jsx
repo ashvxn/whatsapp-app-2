@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { Link, useNavigate } from "react-router-dom";
+import Modal from "../components/Modal";
 
 const Icons = {
   Search: () => (
@@ -21,12 +22,18 @@ const Icons = {
 };
 
 const TAG_STYLES = {
-  interested:     { background: "#dcfce7", color: "#166534" },
-  course:         { background: "#dbeafe", color: "#1e40af" },
-  "course 1":     { background: "#e0e7ff", color: "#3730a3" },
-  lead:           { background: "#fef9c3", color: "#854d0e" },
-  not_interested: { background: "#f1f5f9", color: "#64748b" },
+  interested:        { background: "#dcfce7", color: "#166534" },
+  course:            { background: "#dbeafe", color: "#1e40af" },
+  "course 1":        { background: "#e0e7ff", color: "#3730a3" },
+  lead:              { background: "#fef9c3", color: "#854d0e" },
+  not_interested:    { background: "#f1f5f9", color: "#64748b" },
+  "verified lead":   { background: "#ede9fe", color: "#5b21b6" },
+  "details captured":{ background: "#cffafe", color: "#0e7490" },
+  "id available":    { background: "#fce7f3", color: "#9d174d" },
 };
+
+// Tags that open a popup instead of filtering the list when clicked.
+const POPUP_TAGS = new Set(["details captured", "id available"]);
 
 const GROUP_ORDER = ["interested", "lead", "course", "course 1", "not_interested"];
 
@@ -43,6 +50,8 @@ export default function Contacts() {
   const [activeGroup, setActiveGroup] = useState("All");
   const [expandedCombos, setExpandedCombos] = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(12);
+  const [detailsModal, setDetailsModal] = useState(null); // { contact, data, error }
+  const [idProofModal, setIdProofModal] = useState(null); // { contact, imageUrl, error }
 
   useEffect(() => { setVisibleCount(12); }, [activeGroup, searchTerm]);
 
@@ -76,6 +85,39 @@ export default function Contacts() {
       await api.delete(`/contacts/${id}`);
       fetchContacts();
     }
+  };
+
+  const openDetailsModal = async (contact) => {
+    setDetailsModal({ contact, data: null, error: null });
+    try {
+      const res = await api.get(`/contacts/${contact.id}/scholarship`);
+      setDetailsModal({ contact, data: res.data, error: null });
+    } catch {
+      setDetailsModal({ contact, data: null, error: "Unable to load details." });
+    }
+  };
+
+  const openIdProofModal = async (contact) => {
+    setIdProofModal({ contact, imageUrl: null, error: null });
+    try {
+      const res = await api.get(`/contacts/${contact.id}/id-proof`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      setIdProofModal({ contact, imageUrl: url, error: null });
+    } catch {
+      setIdProofModal({ contact, imageUrl: null, error: "Unable to load ID proof." });
+    }
+  };
+
+  const closeIdProofModal = () => {
+    if (idProofModal?.imageUrl) URL.revokeObjectURL(idProofModal.imageUrl);
+    setIdProofModal(null);
+  };
+
+  const handleTagClick = (tag, contact) => {
+    const norm = tag.trim().toLowerCase();
+    if (norm === "details captured") openDetailsModal(contact);
+    else if (norm === "id available") openIdProofModal(contact);
+    else setActiveGroup(norm);
   };
 
   // Build label groups, normalized case-insensitively: { normalizedTag: { label, count } }
@@ -289,9 +331,11 @@ export default function Contacts() {
                       {c.tags
                         ? c.tags.split(",").map(tag => {
                             const s = getTagStyle(tag);
+                            const isPopup = POPUP_TAGS.has(tag.trim().toLowerCase());
                             return (
                               <span
                                 key={tag}
+                                title={isPopup ? "Click to view" : undefined}
                                 style={{
                                   ...s,
                                   borderRadius: "10px",
@@ -299,8 +343,9 @@ export default function Contacts() {
                                   fontSize: "11px",
                                   fontWeight: "600",
                                   cursor: "pointer",
+                                  textDecoration: isPopup ? "underline dotted" : "none",
                                 }}
-                                onClick={() => setActiveGroup(tag.trim().toLowerCase())}
+                                onClick={() => handleTagClick(tag, c)}
                               >
                                 {tag.trim()}
                               </span>
@@ -411,6 +456,42 @@ export default function Contacts() {
           })}
         </div>
       </div>
+
+      {detailsModal && (
+        <Modal
+          title={`Scholarship Details — ${detailsModal.contact.name}`}
+          onClose={() => setDetailsModal(null)}
+        >
+          {detailsModal.error ? (
+            <p style={{ color: "var(--text-muted)" }}>{detailsModal.error}</p>
+          ) : !detailsModal.data ? (
+            <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px" }}>
+              <div><strong>Name:</strong> {detailsModal.data.name || "—"}</div>
+              <div><strong>Phone:</strong> {detailsModal.data.phone_number || "—"}</div>
+              <div><strong>Email:</strong> {detailsModal.data.email || "—"}</div>
+              <div><strong>Location:</strong> {detailsModal.data.location || "—"}</div>
+              <div><strong>Qualification:</strong> {detailsModal.data.qualification || "—"}</div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {idProofModal && (
+        <Modal
+          title={`ID Proof — ${idProofModal.contact.name}`}
+          onClose={closeIdProofModal}
+        >
+          {idProofModal.error ? (
+            <p style={{ color: "var(--text-muted)" }}>{idProofModal.error}</p>
+          ) : !idProofModal.imageUrl ? (
+            <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+          ) : (
+            <img src={idProofModal.imageUrl} alt="ID proof" style={{ width: "100%", borderRadius: "8px" }} />
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

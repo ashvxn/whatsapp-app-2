@@ -44,3 +44,18 @@ class CallRequest(db.Model):
     notes = db.Column(db.Text)
     status = db.Column(db.String(20), default="pending")  # pending, confirmed, done
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ScholarshipApplication(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contact.id'), unique=True, nullable=False)
+    full_name = db.Column(db.String(100))
+    phone_number = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    location = db.Column(db.String(120))
+    qualification = db.Column(db.String(120))
+    id_proof_path = db.Column(db.String(255))
+    id_proof_media_id = db.Column(db.String(100))
+    status = db.Column(db.String(30), default="awaiting_name")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    contact = db.relationship('Contact', backref=db.backref('scholarship_application', uselist=False, cascade="all, delete-orphan"))

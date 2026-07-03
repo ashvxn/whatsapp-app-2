@@ -3,6 +3,12 @@ from services.whatsapp import send_text, send_interactive_buttons
 from models import Contact
 from extensions import db
 from services.quiz import start_quiz, handle_quiz_answer, get_quiz_state
+from services.scholarship import (
+    start_scholarship,
+    handle_scholarship_message,
+    get_scholarship_state,
+)
+from services.tags import get_tags, set_tags, replace_tag
 
 WELCOME_MSG = (
     "Welcome to *AMD* — an Adobe-accredited creative technology academy! 🎨\n\n"
@@ -145,42 +151,10 @@ NOT_INTERESTED_KEYWORDS = [
 ]
 
 
-def _get_tags(contact):
-    if not contact or not contact.tags:
-        return []
-    return [t.strip().lower() for t in contact.tags.split(",") if t.strip()]
-
-
-def _set_tags(contact, tags_str):
-    if contact:
-        contact.tags = tags_str
-        db.session.commit()
-
-
-def _replace_tag(contact, match_tags, new_tag):
-    if not contact:
-        return
-    raw_tags = [t.strip() for t in (contact.tags or "").split(",") if t.strip()]
-    match_set = {m.lower() for m in match_tags}
-    new_tags = []
-    replaced = False
-    for t in raw_tags:
-        if t.lower() in match_set:
-            if not replaced:
-                new_tags.append(new_tag)
-                replaced = True
-        else:
-            new_tags.append(t)
-    if not replaced:
-        new_tags.append(new_tag)
-    contact.tags = ", ".join(new_tags)
-    db.session.commit()
-
-
 def _check_engagement_upgrade(contact):
-    tags = _get_tags(contact)
+    tags = get_tags(contact)
     if "lead" in tags and "course 1" in tags:
-        _set_tags(contact, "interested, course")
+        set_tags(contact, "interested, course")
 
 
 def _is_not_interested(text):
@@ -198,6 +172,7 @@ def handle_faq(msg, contact):
 
     btn_id = None
     user_text = ""
+    image_id = None
 
     if msg_type == "text":
         user_text = msg.get("text", {}).get("body", "").strip()
@@ -214,15 +189,24 @@ def handle_faq(msg, contact):
     elif msg_type == "button":
         btn_text = msg.get("button", {}).get("text", "").strip().lower()
         if btn_text == "not interested":
-            _replace_tag(contact, ["lead"], "Rejected Lead")
+            replace_tag(contact, ["lead"], "Rejected Lead")
             contact.opted_in = False
             db.session.commit()
             send_text(phone, NOT_INTERESTED_MSG)
         elif btn_text == "interested":
-            _replace_tag(contact, ["lead"], "Interested Lead")
+            replace_tag(contact, ["lead"], "Interested Lead")
             send_interactive_buttons(phone, ENQUIRY_MSG, ENQUIRY_BUTTONS)
         return
+    elif msg_type == "image":
+        image_id = msg.get("image", {}).get("id")
+        if not image_id:
+            return
     else:
+        return
+
+    # --- SCHOLARSHIP: handle answer if contact is mid-application ---
+    if contact and get_scholarship_state(contact):
+        handle_scholarship_message(phone, contact, msg_type, user_text, image_id)
         return
 
     # --- QUIZ: handle answer if contact is mid-quiz ---
@@ -245,10 +229,18 @@ def handle_faq(msg, contact):
         handle_quiz_answer(phone, contact, btn_id)
         return
 
+    # --- SCHOLARSHIP: keyword trigger ---
+    if btn_id is None and image_id is None and "hostel scholarship" in user_text.lower():
+        start_scholarship(phone, contact)
+        return
+
+    if image_id is not None:
+        return
+
     _check_engagement_upgrade(contact)
 
     if btn_id is None and _is_not_interested(user_text):
-        _set_tags(contact, "not_interested")
+        set_tags(contact, "not_interested")
         contact.opted_in = False
         db.session.commit()
         send_text(phone, NOT_INTERESTED_MSG)

@@ -92,6 +92,19 @@ def send_interactive_buttons(to, text, buttons):
     }
     return send_api_request(payload)
 
+def download_media(media_id):
+    """Resolve a WhatsApp media id to its bytes + mime type."""
+    headers = {"Authorization": f"Bearer {current_app.config['WHATSAPP_TOKEN']}"}
+    meta_url = f"https://graph.facebook.com/v21.0/{media_id}"
+    meta_resp = requests.get(meta_url, headers=headers)
+    meta_resp.raise_for_status()
+    meta = meta_resp.json()
+
+    file_resp = requests.get(meta["url"], headers=headers)
+    file_resp.raise_for_status()
+    return file_resp.content, meta.get("mime_type")
+
+
 def mark_as_read(message_id):
     payload = {
         "messaging_product": "whatsapp",

@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, send_file
 from extensions import db
-from models import Contact
+from models import Contact, ScholarshipApplication
 
 contacts_bp = Blueprint("contacts", __name__, url_prefix="/api/contacts")
 
@@ -63,3 +64,29 @@ def delete_contact(id):
     db.session.delete(contact)
     db.session.commit()
     return jsonify({"message": "Contact deleted"})
+
+# Get a contact's captured scholarship details
+@contacts_bp.route("/<int:id>/scholarship", methods=["GET"])
+def get_scholarship_details(id):
+    Contact.query.get_or_404(id)
+    app = ScholarshipApplication.query.filter_by(contact_id=id).first()
+    if not app:
+        return jsonify({"error": "No scholarship application found"}), 404
+    return jsonify({
+        "name": app.full_name,
+        "phone_number": app.phone_number,
+        "email": app.email,
+        "location": app.location,
+        "qualification": app.qualification,
+        "status": app.status,
+        "has_id_proof": bool(app.id_proof_path)
+    })
+
+# Get a contact's uploaded ID proof photo
+@contacts_bp.route("/<int:id>/id-proof", methods=["GET"])
+def get_id_proof(id):
+    Contact.query.get_or_404(id)
+    app = ScholarshipApplication.query.filter_by(contact_id=id).first()
+    if not app or not app.id_proof_path or not os.path.exists(app.id_proof_path):
+        return jsonify({"error": "No ID proof found"}), 404
+    return send_file(app.id_proof_path)
