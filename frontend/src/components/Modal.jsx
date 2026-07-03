@@ -14,10 +14,11 @@ export default function Modal({ title, onClose, children }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="card"
         style={{
-          background: "var(--bg-card)",
+          background: "var(--white)",
+          border: "1px solid var(--border)",
           borderRadius: "12px",
+          boxShadow: "var(--shadow)",
           padding: "24px",
           width: "90%",
           maxWidth: "480px",

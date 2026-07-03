@@ -150,6 +150,13 @@ NOT_INTERESTED_KEYWORDS = [
     "don't contact", "stop", "unsubscribe",
 ]
 
+_HOSTEL_RE = re.compile(r"\bhostel\b", re.IGNORECASE)
+_SCHOLARSHIP_RE = re.compile(r"\bscholarships?\b", re.IGNORECASE)
+
+
+def _is_scholarship_trigger(text):
+    return bool(_HOSTEL_RE.search(text) and _SCHOLARSHIP_RE.search(text))
+
 
 def _check_engagement_upgrade(contact):
     tags = get_tags(contact)
@@ -230,7 +237,7 @@ def handle_faq(msg, contact):
         return
 
     # --- SCHOLARSHIP: keyword trigger ---
-    if btn_id is None and image_id is None and "hostel scholarship" in user_text.lower():
+    if btn_id is None and image_id is None and _is_scholarship_trigger(user_text):
         start_scholarship(phone, contact)
         return
 
