@@ -94,7 +94,7 @@ ALREADY_APPLIED_MSG = (
 COMPLETE_MSG = (
     "🎉 Thank you for submitting your ID proof!\n\n"
     "Your document has been received successfully and is now under verification by our admissions team.\n\n"
-    "📧 Please keep an eye on your email inbox (and Spam/Junk folder), as all further communication regarding your verification status, eligibility, and the AMD Free Hostel campaign will be sent via email"
+    "📧 Please keep an eye on your email inbox (and Spam/Junk folder), as all further communication regarding your verification status, eligibility, and the AMD Free Hostel campaign will be sent via email\n\n"
     "If your application is approved, we'll contact you with the next steps as soon as possible.\n\n"
     "Thank you for choosing AMD. We wish you the very best, and we look forward to welcoming you!"
 )
