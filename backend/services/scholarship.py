@@ -53,10 +53,10 @@ PROMPTS = {
         "✅ Thanks for accepting the terms! Let's get started.\n\n"
         "What's your *Full Name* (as per your government-issued ID)?"
     ),
-    "awaiting_phone": "Thanks! What's your *contact phone number*?",
+    "awaiting_phone": "Thanks! What's your *alternate contact phone number*?",
     "awaiting_email": (
         "Great. What's your *Active Email Address*?\n"
-        "(please provide an active email address, as all further communication will be sent via email."
+        "(please provide an active email address, as all further communication will be sent via email.)"
     ),
     "awaiting_location": "Got it. What's your *current location* (city/town)?",
     "awaiting_age": "Almost done — what's your *age*?",
