@@ -73,8 +73,9 @@ INVALID_MSGS = {
 
 CANCEL_MSG = "Application cancelled. Type *hostel scholarship* anytime to start again."
 ALREADY_APPLIED_MSG = (
-    "🎓 You've already completed your Hostel Scholarship application.\n\n"
-    "If you need to update anything, please contact our admissions team."
+    "🎓 You've already completed your *Free Hostel Campaign* application.\n\n"
+    "If you need to update anything, please contact our admissions team: "
+    "+91 96560 99333"
 )
 COMPLETE_MSG = (
     "🎉 Your ID proof has been received. Your Hostel Scholarship application is now complete. "
