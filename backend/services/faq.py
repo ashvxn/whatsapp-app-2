@@ -154,10 +154,13 @@ NOT_INTERESTED_KEYWORDS = [
 
 _HOSTEL_RE = re.compile(r"\bhostel\b", re.IGNORECASE)
 _SCHOLARSHIP_RE = re.compile(r"\bscholarships?\b", re.IGNORECASE)
+_CAMPAIGN_RE = re.compile(r"\bcampaigns?\b", re.IGNORECASE)
 
 
 def _is_scholarship_trigger(text):
-    return bool(_HOSTEL_RE.search(text) and _SCHOLARSHIP_RE.search(text))
+    if not _HOSTEL_RE.search(text):
+        return False
+    return bool(_SCHOLARSHIP_RE.search(text) or _CAMPAIGN_RE.search(text))
 
 
 def _check_engagement_upgrade(contact):

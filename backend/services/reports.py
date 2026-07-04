@@ -68,13 +68,14 @@ def _add_contact_page(pdf, contact, app):
 
 def generate_verified_leads_report():
     contacts = (
-        Contact.query.filter(
+        Contact.query.join(ScholarshipApplication, ScholarshipApplication.contact_id == Contact.id)
+        .filter(
             or_(
                 Contact.tags.ilike("%verified lead%"),
                 Contact.tags.ilike("%id available%"),
             )
         )
-        .order_by(Contact.name)
+        .order_by(ScholarshipApplication.created_at.asc())
         .all()
     )
 
