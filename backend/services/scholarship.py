@@ -28,14 +28,12 @@ TERMS_MSG = (
 
 TERMS_BUTTONS = [
     {"id": "scholarship_accept", "title": "Accept"},
-    {"id": "main_menu", "title": "Main Menu"},
 ]
 
 DETAILS_PROMPT = (
     "Thank you for your interest! 😊\n\n"
     "Please send us the following details to continue:\n\n"
     "• Full Name\n"
-    "• Phone Number\n"
     "• Age\n"
     "• Email ID\n"
     "• Location\n\n"
@@ -69,40 +67,29 @@ COMPLETE_MSG = (
 )
 
 EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
-PHONE_RE = re.compile(r"\+?\d{7,15}")
+
+DETAILS_ERROR_MSG = (
+    "Hmm, I couldn't find a valid *Email ID* in your message 🤔\n\n"
+    "Please resend all your details (Full Name, Age, Email ID, Location), "
+    "making sure to include a valid email address."
+)
 
 
 def _extract_email(text):
-    m = EMAIL_RE.search(text)
+    # Mobile keyboards sometimes hard-wrap a long email address across a line
+    # break; collapse newlines before searching so the address still matches.
+    flattened = text.replace("\r", "").replace("\n", "")
+    m = EMAIL_RE.search(flattened)
     return m.group(0) if m else None
-
-
-def _extract_phone(text):
-    m = PHONE_RE.search(text)
-    return m.group(0) if m else None
-
-
-def _details_error_msg(missing_email, missing_phone):
-    missing = []
-    if missing_email:
-        missing.append("a valid *Email ID*")
-    if missing_phone:
-        missing.append("a valid *Phone Number*")
-    missing_str = " and ".join(missing)
-    return (
-        f"Hmm, I couldn't find {missing_str} in your message 🤔\n\n"
-        "Please resend all your details (Full Name, Phone Number, Age, Email ID, Location), "
-        f"making sure to include {missing_str}."
-    )
 
 
 def _parse_lines(text):
     """Best-effort split into individual fields when the reply follows the
     requested one-per-line order. Falls back to leaving fields blank."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    if len(lines) != 5:
+    if len(lines) != 4:
         return {}
-    full_name, _phone, age_raw, _email, location = lines
+    full_name, age_raw, _email, location = lines
     parsed = {"full_name": full_name, "location": location}
     if age_raw.isdigit() and AGE_MIN <= int(age_raw) <= AGE_MAX:
         parsed["age"] = int(age_raw)
@@ -197,14 +184,13 @@ def _handle_details_step(phone, contact, app, user_text):
         return
 
     email = _extract_email(text)
-    phone_number = _extract_phone(text)
-    if not email or not phone_number:
-        send_text(phone, _details_error_msg(missing_email=not email, missing_phone=not phone_number))
+    if not email:
+        send_text(phone, DETAILS_ERROR_MSG)
         return
 
     app.details_text = text
     app.email = email
-    app.phone_number = phone_number
+    app.phone_number = contact.phone
     for field, value in _parse_lines(text).items():
         setattr(app, field, value)
 
