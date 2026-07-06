@@ -124,6 +124,17 @@ def create_app():
                     print("Migration: added age column to scholarship_application table")
         except Exception as e:
             print(f"Migration error: {e}")
+        # Migrate existing DBs: add details_text to scholarship_application if missing
+        try:
+            with db.engine.connect() as conn:
+                result = conn.execute(text("PRAGMA table_info(scholarship_application)"))
+                existing_columns = [row[1] for row in result.fetchall()]
+                if 'details_text' not in existing_columns:
+                    conn.execute(text("ALTER TABLE scholarship_application ADD COLUMN details_text TEXT"))
+                    conn.commit()
+                    print("Migration: added details_text column to scholarship_application table")
+        except Exception as e:
+            print(f"Migration error: {e}")
 
     # ✅ START SCHEDULER
     from services.scheduler import start_scheduler

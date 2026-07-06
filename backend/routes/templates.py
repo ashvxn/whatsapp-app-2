@@ -19,7 +19,7 @@ TEMPLATES = [
     {
         "name": "third",
         "type": "image",
-        "language": "en",
+        "language": "ml",
         "label": "Kochi Descriptive",
         "variables": ["Paragraph 1", "Paragraph 2", "Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Paragraph 3"]
     },

@@ -8,23 +8,6 @@ from models import ScholarshipApplication
 from services.whatsapp import send_text, send_interactive_buttons, download_media
 from services.tags import replace_tag, add_tag
 
-STEP_ORDER = [
-    "awaiting_name",
-    "awaiting_phone",
-    "awaiting_email",
-    "awaiting_location",
-    "awaiting_age",
-    "awaiting_id_proof",
-]
-
-FIELD_FOR_STEP = {
-    "awaiting_name": "full_name",
-    "awaiting_phone": "phone_number",
-    "awaiting_email": "email",
-    "awaiting_location": "location",
-    "awaiting_age": "age",
-}
-
 AGE_MIN = 1
 AGE_MAX = 100
 
@@ -48,18 +31,19 @@ TERMS_BUTTONS = [
     {"id": "main_menu", "title": "Main Menu"},
 ]
 
+DETAILS_PROMPT = (
+    "Thank you for your interest! 😊\n\n"
+    "Please send us the following details to continue:\n\n"
+    "• Full Name\n"
+    "• Phone Number\n"
+    "• Age\n"
+    "• Email ID\n"
+    "• Location\n\n"
+    "(Please send each detail on a separate line, in the order listed above.)\n\n"
+    "Once we receive your details, we'll guide you to the next step. Thank you!"
+)
+
 PROMPTS = {
-    "awaiting_name": (
-        "✅ Thanks for accepting the terms! Let's get started.\n\n"
-        "What's your *Full Name* (as per your government-issued ID)?"
-    ),
-    "awaiting_phone": "Thanks! What's your *alternate phone number*?",
-    "awaiting_email": (
-        "Great. What's your *Active Email Address*?\n"
-        "(please provide an active email address, as all further communication will be sent via email.)"
-    ),
-    "awaiting_location": "Got it. What's your *current location* (city/town)?",
-    "awaiting_age": "Almost done — what's your *age*?",
     "awaiting_id_proof": (
         "✅ Thanks, your details have been recorded!\n\n"
         "Now please upload a *Government-Issued ID Proof* that clearly displays:\n"
@@ -67,21 +51,6 @@ PROMPTS = {
         "• Date of Birth (DOB)\n"
         "• Residential Address\n\n"
         "(e.g. Aadhaar Card, Passport, Voter ID)"
-    ),
-}
-
-INVALID_MSGS = {
-    "awaiting_phone": (
-        "That doesn't look like a valid phone number 🤔 "
-        "Please enter a valid phone number (7-15 digits)."
-    ),
-    "awaiting_email": (
-        "That doesn't look like a valid email address 🤔 "
-        "Please enter a valid email (e.g. name@example.com)."
-    ),
-    "awaiting_age": (
-        "That doesn't look like a valid age 🤔 "
-        f"Please enter a valid age ({AGE_MIN}-{AGE_MAX})."
     ),
 }
 
@@ -99,28 +68,45 @@ COMPLETE_MSG = (
     "Thank you for choosing AMD. We wish you the very best, and we look forward to welcoming you!"
 )
 
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-PHONE_RE = re.compile(r"^\+?\d{7,15}$")
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+PHONE_RE = re.compile(r"\+?\d{7,15}")
 
 
-def _validate(step, text):
-    if step == "awaiting_phone":
-        return bool(PHONE_RE.match(text.strip()))
-    if step == "awaiting_email":
-        return bool(EMAIL_RE.match(text.strip()))
-    if step == "awaiting_age":
-        stripped = text.strip()
-        if not stripped.isdigit():
-            return False
-        return AGE_MIN <= int(stripped) <= AGE_MAX
-    return bool(text.strip())
+def _extract_email(text):
+    m = EMAIL_RE.search(text)
+    return m.group(0) if m else None
 
 
-def _next_step(step):
-    idx = STEP_ORDER.index(step)
-    if idx + 1 < len(STEP_ORDER):
-        return STEP_ORDER[idx + 1]
-    return "completed"
+def _extract_phone(text):
+    m = PHONE_RE.search(text)
+    return m.group(0) if m else None
+
+
+def _details_error_msg(missing_email, missing_phone):
+    missing = []
+    if missing_email:
+        missing.append("a valid *Email ID*")
+    if missing_phone:
+        missing.append("a valid *Phone Number*")
+    missing_str = " and ".join(missing)
+    return (
+        f"Hmm, I couldn't find {missing_str} in your message 🤔\n\n"
+        "Please resend all your details (Full Name, Phone Number, Age, Email ID, Location), "
+        f"making sure to include {missing_str}."
+    )
+
+
+def _parse_lines(text):
+    """Best-effort split into individual fields when the reply follows the
+    requested one-per-line order. Falls back to leaving fields blank."""
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    if len(lines) != 5:
+        return {}
+    full_name, _phone, age_raw, _email, location = lines
+    parsed = {"full_name": full_name, "location": location}
+    if age_raw.isdigit() and AGE_MIN <= int(age_raw) <= AGE_MAX:
+        parsed["age"] = int(age_raw)
+    return parsed
 
 
 def get_scholarship_state(contact):
@@ -151,17 +137,18 @@ def start_scholarship(phone, contact):
         send_text(phone, ALREADY_APPLIED_MSG)
         return
     if app:
-        app.status = "awaiting_name"
+        app.status = "awaiting_details"
         app.full_name = None
         app.phone_number = None
         app.email = None
         app.location = None
         app.age = None
+        app.details_text = None
     else:
-        app = ScholarshipApplication(contact_id=contact.id, status="awaiting_name")
+        app = ScholarshipApplication(contact_id=contact.id, status="awaiting_details")
         db.session.add(app)
     db.session.commit()
-    send_text(phone, PROMPTS["awaiting_name"])
+    send_text(phone, DETAILS_PROMPT)
 
 
 def _cancel(phone, app):
@@ -200,6 +187,36 @@ def _handle_id_proof_step(phone, contact, app, user_text, image_id):
     send_text(phone, COMPLETE_MSG)
 
 
+def _handle_details_step(phone, contact, app, user_text):
+    text = (user_text or "").strip()
+    if text.lower() == "cancel":
+        _cancel(phone, app)
+        return
+    if not text:
+        send_text(phone, "Please reply with your details to continue, or type *cancel* to stop.")
+        return
+
+    email = _extract_email(text)
+    phone_number = _extract_phone(text)
+    if not email or not phone_number:
+        send_text(phone, _details_error_msg(missing_email=not email, missing_phone=not phone_number))
+        return
+
+    app.details_text = text
+    app.email = email
+    app.phone_number = phone_number
+    for field, value in _parse_lines(text).items():
+        setattr(app, field, value)
+
+    app.status = "awaiting_id_proof"
+    db.session.commit()
+
+    replace_tag(contact, ["lead"], "Verified Lead")
+    add_tag(contact, "Details Captured")
+
+    send_text(phone, PROMPTS["awaiting_id_proof"])
+
+
 def handle_scholarship_message(phone, contact, msg_type, user_text, image_id):
     app = ScholarshipApplication.query.filter_by(contact_id=contact.id).first()
     if not app or app.status == "completed":
@@ -211,25 +228,6 @@ def handle_scholarship_message(phone, contact, msg_type, user_text, image_id):
         _handle_id_proof_step(phone, contact, app, user_text, image_id)
         return
 
-    text = (user_text or "").strip()
-    if text.lower() == "cancel":
-        _cancel(phone, app)
+    if step == "awaiting_details":
+        _handle_details_step(phone, contact, app, user_text)
         return
-    if not text:
-        send_text(phone, "Please reply with text to continue, or type *cancel* to stop.")
-        return
-    if not _validate(step, text):
-        send_text(phone, INVALID_MSGS.get(step, "That doesn't look right, please try again."))
-        return
-
-    value = int(text) if step == "awaiting_age" else text
-    setattr(app, FIELD_FOR_STEP[step], value)
-    next_step = _next_step(step)
-    app.status = next_step
-    db.session.commit()
-
-    if next_step == "awaiting_id_proof":
-        replace_tag(contact, ["lead"], "Verified Lead")
-        add_tag(contact, "Details Captured")
-
-    send_text(phone, PROMPTS[next_step])

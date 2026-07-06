@@ -11,7 +11,7 @@ from services.pricing import get_conversation_cost
 TEMPLATE_LANGUAGES = {
     "first":  "en",
     "second": "en",
-    "third":  "en",
+    "third":  "ml",
     "fourth": "ml",
 }
 

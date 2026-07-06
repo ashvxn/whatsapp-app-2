@@ -52,6 +52,12 @@ def _add_contact_page(pdf, contact, app):
     for label, value in fields:
         _line(pdf, f"**{label}:** {_safe_text(value)}", markdown=True)
 
+    pdf.ln(2)
+    _line(pdf, "**Details (as submitted):**", markdown=True)
+    pdf.set_font("Helvetica", "", 10)
+    _line(pdf, _safe_text(app.details_text))
+    pdf.set_font("Helvetica", "", 11)
+
     pdf.ln(4)
     _line(pdf, "**ID Proof:**", markdown=True)
 

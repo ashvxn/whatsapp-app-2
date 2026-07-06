@@ -501,11 +501,14 @@ export default function Contacts() {
             <p style={{ color: "var(--text-muted)" }}>Loading...</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px" }}>
-              <div><strong>Name:</strong> {detailsModal.data.name || "—"}</div>
-              <div><strong>Phone:</strong> {detailsModal.data.phone_number || "—"}</div>
               <div><strong>Email:</strong> {detailsModal.data.email || "—"}</div>
-              <div><strong>Location:</strong> {detailsModal.data.location || "—"}</div>
-              <div><strong>Age:</strong> {detailsModal.data.age ?? "—"}</div>
+              <div><strong>Phone:</strong> {detailsModal.data.phone_number || "—"}</div>
+              <div>
+                <strong>Details:</strong>
+                <div style={{ whiteSpace: "pre-wrap", marginTop: "4px" }}>
+                  {detailsModal.data.details_text || "—"}
+                </div>
+              </div>
             </div>
           )}
         </Modal>

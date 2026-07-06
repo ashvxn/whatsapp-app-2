@@ -54,9 +54,10 @@ class ScholarshipApplication(db.Model):
     location = db.Column(db.String(120))
     qualification = db.Column(db.String(120))  # deprecated, replaced by age
     age = db.Column(db.Integer)
+    details_text = db.Column(db.Text)  # raw details message as submitted by the lead
     id_proof_path = db.Column(db.String(255))
     id_proof_media_id = db.Column(db.String(100))
-    status = db.Column(db.String(30), default="awaiting_name")
+    status = db.Column(db.String(30), default="awaiting_details")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     contact = db.relationship('Contact', backref=db.backref('scholarship_application', uselist=False, cascade="all, delete-orphan"))
