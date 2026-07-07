@@ -152,6 +152,13 @@ NOT_INTERESTED_KEYWORDS = [
     "don't contact", "stop", "unsubscribe",
 ]
 
+# Ice breaker prompt text -> same routing as tapping the equivalent menu button
+ICE_BREAKER_MAP = {
+    "our courses": "courses",
+    "contact us": "contact",
+    "faq": "faq",
+}
+
 _HOSTEL_RE = re.compile(r"\bhostel\b", re.IGNORECASE)
 _SCHOLARSHIP_RE = re.compile(r"\bscholarships?\b", re.IGNORECASE)
 _CAMPAIGN_RE = re.compile(r"\bcampaigns?\b", re.IGNORECASE)
@@ -261,6 +268,9 @@ def handle_faq(msg, contact):
     if btn_id is None and _is_interested(user_text):
         send_interactive_buttons(phone, ENQUIRY_MSG, ENQUIRY_BUTTONS)
         return
+
+    if btn_id is None:
+        btn_id = ICE_BREAKER_MAP.get(user_text.strip().lower())
 
     # Button routing
     if btn_id == "courses":
