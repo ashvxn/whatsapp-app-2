@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 from extensions import db
 from models import Campaign, CampaignRecipient, Contact
+from services.tags import filter_contacts_by_tags
 
 campaigns_bp = Blueprint("campaigns", __name__, url_prefix="/api/campaigns")
 
@@ -31,6 +32,17 @@ def list_posters():
                 })
     items.sort(key=lambda x: x["uploaded_at"], reverse=True)
     return jsonify(items)
+
+# Preview how many opted-in contacts a set of tags would target
+@campaigns_bp.route("/audience-count", methods=["GET"])
+def audience_count():
+    tags_param = request.args.get("tags", "")
+    match_type = request.args.get("match_type", "any")
+    tags = [t for t in tags_param.split(",") if t.strip()]
+
+    contacts = Contact.query.filter_by(opted_in=True).all()
+    matched = filter_contacts_by_tags(contacts, tags, match_type)
+    return jsonify({"count": len(matched)})
 
 # List all campaigns
 @campaigns_bp.route("", methods=["GET"])
@@ -108,9 +120,14 @@ def create_campaign():
         except (TypeError, ValueError):
             variables = None
 
+    match_type = data.get("match_type", "any")
+    if match_type not in ("any", "exact"):
+        match_type = "any"
+
     payload = {
         "tag": data.get("tag"),
         "tags": tags,
+        "match_type": match_type,
         "message": data.get("message"),
         "image_url": data.get("image_url"),
         "variables": variables

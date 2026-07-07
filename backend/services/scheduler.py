@@ -7,6 +7,7 @@ from extensions import db
 from models import Campaign, Contact, CampaignRecipient
 from services.whatsapp import send_template, send_text, send_image
 from services.pricing import get_conversation_cost
+from services.tags import filter_contacts_by_tags
 
 TEMPLATE_LANGUAGES = {
     "first":  "en",
@@ -14,11 +15,6 @@ TEMPLATE_LANGUAGES = {
     "third":  "ml",
     "fourth": "ml",
 }
-
-def _contact_has_all_tags(contact, required_tags_normalized):
-    contact_tags = {t.strip().lower() for t in (contact.tags or "").split(",") if t.strip()}
-    return all(rt in contact_tags for rt in required_tags_normalized)
-
 
 def extract_message_id(response):
     try:
@@ -50,12 +46,10 @@ def process_campaigns(app):
                         message = campaign.payload.get("message")
                         variables = campaign.payload.get("variables")
                         image_url = campaign.payload.get("image_url")
-
-                        required_tags_normalized = [t.strip().lower() for t in tags if t and t.strip()]
+                        match_type = campaign.payload.get("match_type", "any")
 
                         contacts = Contact.query.filter_by(opted_in=True).all()
-                        if required_tags_normalized:
-                            contacts = [c for c in contacts if _contact_has_all_tags(c, required_tags_normalized)]
+                        contacts = filter_contacts_by_tags(contacts, tags, match_type)
                         total_campaign_cost = 0.0
                         sent_count = 0
                         failed_count = 0

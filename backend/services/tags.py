@@ -42,3 +42,25 @@ def add_tag(contact, new_tag):
     raw_tags.append(new_tag)
     contact.tags = ", ".join(raw_tags)
     db.session.commit()
+
+
+def normalize_tags(tags):
+    return {t.strip().lower() for t in (tags or []) if t and t.strip()}
+
+
+def filter_contacts_by_tags(contacts, required_tags, match_type="any"):
+    """Filter contacts against a required tag set.
+
+    match_type "any" (default): contact must have ALL required tags, but may
+    also carry additional tags (a superset match).
+    match_type "exact": contact's tag set must be EXACTLY the required tags,
+    no more and no less. Used for campaigns launched from a specific
+    "Grouped by Labels" combination on the Contacts page, so the campaign
+    doesn't also catch contacts that have those tags plus others.
+    """
+    required = normalize_tags(required_tags)
+    if not required:
+        return list(contacts)
+    if match_type == "exact":
+        return [c for c in contacts if set(get_tags(c)) == required]
+    return [c for c in contacts if required.issubset(set(get_tags(c)))]

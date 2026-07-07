@@ -26,6 +26,8 @@ export default function CreateCampaign() {
   const navigate = useNavigate();
   const location = useLocation();
   const [targetTags, setTargetTags] = useState(location.state?.targetTags || null);
+  const [audienceCount, setAudienceCount] = useState(null);
+  const [audienceLoading, setAudienceLoading] = useState(false);
 
   useEffect(() => {
     api.get("/templates")
@@ -65,6 +67,21 @@ export default function CreateCampaign() {
     });
   };
 
+  // Live preview of how many opted-in contacts the current targeting will reach.
+  useEffect(() => {
+    const tagsParam = targetTags ? targetTags.join(",") : tag;
+    const matchType = targetTags ? "exact" : "any";
+
+    let cancelled = false;
+    setAudienceLoading(true);
+    api.get("/campaigns/audience-count", { params: { tags: tagsParam, match_type: matchType } })
+      .then(res => { if (!cancelled) setAudienceCount(res.data.count); })
+      .catch(() => { if (!cancelled) setAudienceCount(null); })
+      .finally(() => { if (!cancelled) setAudienceLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [tag, targetTags]);
+
   const getUniqueTags = () => {
     const allTags = new Set();
     contacts.forEach(c => {
@@ -83,6 +100,7 @@ export default function CreateCampaign() {
     formData.append("template_name", template);
     if (targetTags) {
       formData.append("tags", targetTags.join(","));
+      formData.append("match_type", "exact");
     } else {
       formData.append("tag", tag);
     }
@@ -269,11 +287,31 @@ export default function CreateCampaign() {
             </div>
           )}
 
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 18px", marginBottom: "20px", borderRadius: "var(--radius)",
+            background: "var(--bg-main)", border: "1px solid var(--border)",
+          }}>
+            <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>Audience for this campaign</span>
+            <span style={{ fontSize: "15px", fontWeight: "700" }}>
+              {audienceLoading
+                ? "Calculating..."
+                : audienceCount === null
+                  ? "—"
+                  : `${audienceCount} contact${audienceCount === 1 ? "" : "s"}`}
+            </span>
+          </div>
+
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
             <Link to="/campaigns">
               <button type="button" className="btn-outline">Cancel</button>
             </Link>
-            <button type="submit" className="btn-primary" style={{ minWidth: "160px" }} disabled={loading}>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ minWidth: "160px" }}
+              disabled={loading || audienceCount === 0}
+            >
               {loading ? "Launching..." : "Launch Campaign"}
             </button>
           </div>
