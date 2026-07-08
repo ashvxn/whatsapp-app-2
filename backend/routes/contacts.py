@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify, send_file
 from extensions import db
-from models import Contact, ScholarshipApplication
+from models import Contact, ScholarshipApplication, IncomingMessage
 
 contacts_bp = Blueprint("contacts", __name__, url_prefix="/api/contacts")
 
@@ -82,6 +82,20 @@ def get_scholarship_details(id):
         "status": app.status,
         "has_id_proof": bool(app.id_proof_path)
     })
+
+# Get a contact's incoming message history (incoming messages only, no replies)
+@contacts_bp.route("/<int:id>/messages", methods=["GET"])
+def get_incoming_messages(id):
+    Contact.query.get_or_404(id)
+    messages = IncomingMessage.query.filter_by(contact_id=id).order_by(IncomingMessage.created_at.asc()).all()
+    return jsonify([
+        {
+            "id": m.id,
+            "msg_type": m.msg_type,
+            "body": m.body,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        } for m in messages
+    ])
 
 # Get a contact's uploaded ID proof photo
 @contacts_bp.route("/<int:id>/id-proof", methods=["GET"])

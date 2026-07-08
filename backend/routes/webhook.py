@@ -2,9 +2,28 @@ from flask import Blueprint, request, current_app, g
 from services.faq import handle_faq
 from services.whatsapp import mark_as_read
 from extensions import db
-from models import CampaignRecipient, Contact
+from models import CampaignRecipient, Contact, IncomingMessage
 
 webhook = Blueprint("webhook", __name__)
+
+
+def _extract_message_body(msg):
+    """Best-effort plain-text summary of an inbound WhatsApp message, for history logging only."""
+    msg_type = msg.get("type")
+    if msg_type == "text":
+        return msg.get("text", {}).get("body", "")
+    if msg_type == "button":
+        return msg.get("button", {}).get("text", "")
+    if msg_type == "interactive":
+        interactive = msg.get("interactive", {})
+        if "button_reply" in interactive:
+            return interactive["button_reply"].get("title", "")
+        if "list_reply" in interactive:
+            return interactive["list_reply"].get("title", "")
+        return ""
+    if msg_type == "image":
+        return msg.get("image", {}).get("caption") or "[image]"
+    return f"[{msg_type}]" if msg_type else ""
 
 @webhook.route("/webhook/whatsapp", methods=["GET"])
 def verify():
@@ -48,6 +67,22 @@ def receive():
                         db.session.add(existing)
                         db.session.commit()
 
+                    # Persist incoming message history (does not affect auto-reply flow below)
+                    try:
+                        wa_msg_id = msg.get("id")
+                        already_logged = wa_msg_id and IncomingMessage.query.filter_by(wa_message_id=wa_msg_id).first()
+                        if not already_logged:
+                            db.session.add(IncomingMessage(
+                                contact_id=existing.id,
+                                phone=sender_phone,
+                                wa_message_id=wa_msg_id,
+                                msg_type=msg.get("type"),
+                                body=_extract_message_body(msg),
+                            ))
+                            db.session.commit()
+                    except Exception as log_err:
+                        print(f"Error saving incoming message history: {log_err}")
+                        db.session.rollback()
 
                 # 3. HANDLE STATUS UPDATES
                 statuses = value.get("statuses", [])

@@ -22,6 +22,9 @@ const Icons = {
   Chevron: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
   ),
+  MessageSquare: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+  ),
 };
 
 const TAG_STYLES = {
@@ -55,6 +58,7 @@ export default function Contacts() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [detailsModal, setDetailsModal] = useState(null); // { contact, data, error }
   const [idProofModal, setIdProofModal] = useState(null); // { contact, imageUrl, error }
+  const [messagesModal, setMessagesModal] = useState(null); // { contact, messages, error }
   const [downloadingReport, setDownloadingReport] = useState(false);
 
   useEffect(() => { setVisibleCount(12); }, [activeGroup, searchTerm]);
@@ -115,6 +119,16 @@ export default function Contacts() {
   const closeIdProofModal = () => {
     if (idProofModal?.imageUrl) URL.revokeObjectURL(idProofModal.imageUrl);
     setIdProofModal(null);
+  };
+
+  const openMessagesModal = async (contact) => {
+    setMessagesModal({ contact, messages: null, error: null });
+    try {
+      const res = await api.get(`/contacts/${contact.id}/messages`);
+      setMessagesModal({ contact, messages: res.data, error: null });
+    } catch {
+      setMessagesModal({ contact, messages: null, error: "Unable to load messages." });
+    }
   };
 
   const downloadVerifiedLeadsReport = async () => {
@@ -389,6 +403,14 @@ export default function Contacts() {
                     </div>
                   </td>
                   <td style={{ textAlign: "right" }}>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: "6px", marginRight: "6px" }}
+                      title="View incoming messages"
+                      onClick={() => openMessagesModal(c)}
+                    >
+                      <Icons.MessageSquare />
+                    </button>
                     <button className="btn-danger" style={{ padding: "6px" }} onClick={() => deleteContact(c.id)}>
                       <Icons.Trash />
                     </button>
@@ -509,6 +531,32 @@ export default function Contacts() {
                   {detailsModal.data.details_text || "—"}
                 </div>
               </div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {messagesModal && (
+        <Modal
+          title={`Incoming Messages — ${messagesModal.contact.name}`}
+          onClose={() => setMessagesModal(null)}
+        >
+          {messagesModal.error ? (
+            <p style={{ color: "var(--text-muted)" }}>{messagesModal.error}</p>
+          ) : !messagesModal.messages ? (
+            <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+          ) : messagesModal.messages.length === 0 ? (
+            <p style={{ color: "var(--text-muted)" }}>No incoming messages yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "400px", overflowY: "auto" }}>
+              {messagesModal.messages.map(m => (
+                <div key={m.id} style={{ background: "var(--bg-main)", borderRadius: "8px", padding: "10px 12px" }}>
+                  <div style={{ whiteSpace: "pre-wrap", fontSize: "14px" }}>{m.body || `[${m.msg_type}]`}</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "11px", marginTop: "4px" }}>
+                    {m.created_at ? new Date(m.created_at).toLocaleString() : ""}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </Modal>
