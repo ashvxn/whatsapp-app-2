@@ -27,6 +27,16 @@ class ConversationHistory(db.Model):
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class IncomingMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contact.id'), nullable=False)
+    phone = db.Column(db.String(20), index=True)
+    wa_message_id = db.Column(db.String(100), unique=True)
+    msg_type = db.Column(db.String(20))
+    body = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    contact = db.relationship('Contact', backref=db.backref('incoming_messages', lazy=True, order_by='IncomingMessage.created_at'))
+
 class CampaignRecipient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
