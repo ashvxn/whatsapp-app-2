@@ -492,6 +492,7 @@ export default function Contacts() {
                           <th>Name</th>
                           <th>Phone Number</th>
                           <th>Labels</th>
+                          <th style={{ textAlign: "right" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -500,6 +501,16 @@ export default function Contacts() {
                             <td style={{ fontWeight: "600" }}>{c.name}</td>
                             <td style={{ color: "var(--text-muted)" }}>{c.phone}</td>
                             <td style={{ color: "var(--text-muted)", fontSize: "12px" }}>{c.tags || "—"}</td>
+                            <td style={{ textAlign: "right" }}>
+                              <button
+                                className="btn-primary"
+                                style={{ padding: "6px" }}
+                                title="View incoming messages"
+                                onClick={() => openMessagesModal(c)}
+                              >
+                                <Icons.MessageSquare />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

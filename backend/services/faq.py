@@ -10,6 +10,7 @@ from services.scholarship import (
     get_scholarship_state,
 )
 from services.tags import get_tags, set_tags, replace_tag
+from services.lead_form import is_lead_form_submission, capture_lead_form
 
 WELCOME_MSG = (
     "Welcome to *AMD* — an Adobe-accredited creative technology academy! 🎨\n\n"
@@ -196,6 +197,9 @@ def handle_faq(msg, contact):
     if msg_type == "text":
         user_text = msg.get("text", {}).get("body", "").strip()
         if not user_text:
+            return
+        if contact and is_lead_form_submission(user_text):
+            capture_lead_form(contact, user_text)
             return
     elif msg_type == "interactive":
         interactive = msg.get("interactive", {})
