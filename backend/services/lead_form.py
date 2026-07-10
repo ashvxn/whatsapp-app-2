@@ -5,7 +5,7 @@ from models import ScholarshipApplication
 from services.whatsapp import send_text
 from services.tags import replace_tag, add_tag
 
-FORM_INTRO_RE = re.compile(r"filled out your form", re.IGNORECASE)
+FORM_INTRO_RE = re.compile(r"filled\s+(?:\w+\s+)?your form", re.IGNORECASE)
 EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 FULL_NAME_LINE_RE = re.compile(r"^\s*full\s*name\s*:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 
