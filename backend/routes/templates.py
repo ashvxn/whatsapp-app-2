@@ -5,16 +5,11 @@ templates_bp = Blueprint("templates", __name__, url_prefix="/api/templates")
 # List of templates (Now matching the Meta ones)
 TEMPLATES = [
     {
-        "name": "first",
-        "type": "image",
+        "name": "short",
+        "type": "text",
         "language": "en",
-        "label": "Poster + Text Blast (Kochi)"
-    },
-    {
-        "name": "second",
-        "type": "image",
-        "language": "en",
-        "label": "Poster + Text Blast (Palakkad)"
+        "label": "Short",
+        "variables": ["Intro", "Para"]
     },
     {
         "name": "third",

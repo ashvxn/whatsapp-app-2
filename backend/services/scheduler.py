@@ -10,8 +10,7 @@ from services.pricing import get_conversation_cost
 from services.tags import filter_contacts_by_tags
 
 TEMPLATE_LANGUAGES = {
-    "first":  "en",
-    "second": "en",
+    "short":  "en",
     "third":  "ml",
     "fourth": "ml",
 }
