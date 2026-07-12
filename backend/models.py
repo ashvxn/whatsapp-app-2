@@ -35,7 +35,7 @@ class IncomingMessage(db.Model):
     msg_type = db.Column(db.String(20))
     body = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    contact = db.relationship('Contact', backref=db.backref('incoming_messages', lazy=True, order_by='IncomingMessage.created_at'))
+    contact = db.relationship('Contact', backref=db.backref('incoming_messages', lazy=True, order_by='IncomingMessage.created_at', cascade="all, delete-orphan"))
 
 class CampaignRecipient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
