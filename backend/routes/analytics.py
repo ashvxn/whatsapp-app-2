@@ -80,7 +80,7 @@ def get_overview():
         Campaign.status.in_(['completed', 'partial'])
     ).scalar() or 0
     total_campaigns  = Campaign.query.filter(Campaign.status.in_(['completed', 'partial', 'failed'])).count()
-    total_sent       = CampaignRecipient.query.count()
+    total_sent       = CampaignRecipient.query.filter(CampaignRecipient.status != 'failed').count()
     total_delivered  = CampaignRecipient.query.filter(CampaignRecipient.status.in_(['delivered', 'read'])).count()
     total_read       = CampaignRecipient.query.filter_by(status='read').count()
     active_contacts  = Contact.query.filter_by(opted_in=True).count()
@@ -105,7 +105,7 @@ def get_overview():
     # Recipient stats joined separately
     cat_stat_rows = db.session.query(
         Campaign.category,
-        func.count(CampaignRecipient.id).label('sent'),
+        func.sum(case((CampaignRecipient.status != 'failed', 1), else_=0)).label('sent'),
         func.sum(case((CampaignRecipient.status == 'read', 1), else_=0)).label('read')
     ).join(Campaign, CampaignRecipient.campaign_id == Campaign.id
     ).filter(Campaign.status.in_(['completed', 'partial'])
@@ -127,13 +127,13 @@ def get_overview():
     # ── Top 10 campaigns by reach ─────────────────────────────
     top_rows = db.session.query(
         Campaign,
-        func.count(CampaignRecipient.id).label('sent_count'),
+        func.sum(case((CampaignRecipient.status != 'failed', 1), else_=0)).label('sent_count'),
         func.sum(case((CampaignRecipient.status.in_(['delivered', 'read']), 1), else_=0)).label('delivered_count'),
         func.sum(case((CampaignRecipient.status == 'read', 1), else_=0)).label('read_count')
     ).outerjoin(CampaignRecipient, Campaign.id == CampaignRecipient.campaign_id
     ).filter(Campaign.status.in_(['completed', 'partial'])
     ).group_by(Campaign.id
-    ).order_by(func.count(CampaignRecipient.id).desc()
+    ).order_by(func.sum(case((CampaignRecipient.status != 'failed', 1), else_=0)).desc()
     ).limit(10).all()
 
     top_campaigns = []
@@ -170,7 +170,7 @@ def get_overview():
     # Recipient counts per day joined separately
     trend_stat_rows = db.session.query(
         func.strftime('%Y-%m-%d', Campaign.created_at).label('date'),
-        func.count(CampaignRecipient.id).label('sent'),
+        func.sum(case((CampaignRecipient.status != 'failed', 1), else_=0)).label('sent'),
         func.sum(case((CampaignRecipient.status == 'read', 1), else_=0)).label('read')
     ).join(Campaign, CampaignRecipient.campaign_id == Campaign.id
     ).filter(

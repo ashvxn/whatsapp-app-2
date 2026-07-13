@@ -91,10 +91,17 @@ def receive():
                     status_name = status.get("status")
                     recipient = CampaignRecipient.query.filter_by(whatsapp_msg_id=msg_id).first()
                     if recipient:
-                        status_priority = {"sent": 1, "delivered": 2, "read": 3, "failed": 0}
-                        if status_priority.get(status_name, 0) > status_priority.get(recipient.status, 0):
-                            recipient.status = status_name
-                            db.session.commit()
+                        if status_name == "failed":
+                            # Terminal negative outcome — always record it, unless
+                            # a later delivered/read receipt already superseded it.
+                            if recipient.status in (None, "sent"):
+                                recipient.status = status_name
+                                db.session.commit()
+                        else:
+                            status_priority = {"sent": 1, "delivered": 2, "read": 3}
+                            if status_priority.get(status_name, 0) > status_priority.get(recipient.status, 0):
+                                recipient.status = status_name
+                                db.session.commit()
 
                 # 4. TRIGGER FAQ REPLIES
                 for msg in messages:

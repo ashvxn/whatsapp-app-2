@@ -51,7 +51,9 @@ def get_campaigns():
     campaigns = Campaign.query.all()
     results = []
     for c in campaigns:
-        total_sent = CampaignRecipient.query.filter_by(campaign_id=c.id).count()
+        total_sent = CampaignRecipient.query.filter(
+            CampaignRecipient.campaign_id == c.id, CampaignRecipient.status != 'failed'
+        ).count()
         total_read = CampaignRecipient.query.filter_by(campaign_id=c.id, status='read').count()
         results.append({
             "id": c.id,
