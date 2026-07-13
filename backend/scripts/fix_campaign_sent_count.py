@@ -83,12 +83,15 @@ def fix_campaign(campaign_id, apply_changes, app):
         by_status[r.status] = by_status.get(r.status, 0) + 1
 
     to_delete = [r for r in recipients if r.status not in CONFIRMED_STATUSES]
+    to_keep = [r for r in recipients if r.status in CONFIRMED_STATUSES]
+    new_cost = round(sum(r.estimated_cost or 0.0 for r in to_keep), 3)
 
     print(f"Campaign {campaign_id} ({campaign.template_name}):")
     print(f"  current total recipient rows: {len(recipients)}")
     print(f"  breakdown by status: {by_status}")
-    print(f"  confirmed (delivered/read): {len(recipients) - len(to_delete)}")
+    print(f"  confirmed (delivered/read): {len(to_keep)}")
     print(f"  rows that would be deleted (never confirmed): {len(to_delete)}")
+    print(f"  total_estimated_cost: {campaign.total_estimated_cost} -> {new_cost}")
 
     if not apply_changes:
         print("\nDry run: no changes made. Re-run with --yes to apply.")
@@ -98,11 +101,12 @@ def fix_campaign(campaign_id, apply_changes, app):
 
     for r in to_delete:
         db.session.delete(r)
+    campaign.total_estimated_cost = new_cost
     db.session.commit()
 
     remaining = CampaignRecipient.query.filter_by(campaign_id=campaign_id).count()
     print(f"\nDone. Deleted {len(to_delete)} unconfirmed rows. "
-          f"Campaign {campaign_id} now shows {remaining} sent.")
+          f"Campaign {campaign_id} now shows {remaining} sent, cost {new_cost}.")
 
 
 def main():
