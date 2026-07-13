@@ -48,6 +48,20 @@ def normalize_tags(tags):
     return {t.strip().lower() for t in (tags or []) if t and t.strip()}
 
 
+# Contacts tagged with exactly {lead, pkd workshop 18/06, group-<letter>} (a
+# through q) are hidden from the Contacts list and from campaign
+# audiences/sends. Contacts with additional tags on top of this combo, or
+# missing one of these three, are left alone.
+_HIDDEN_EXACT_TAG_SETS = [
+    {"lead", "pkd workshop 18/06", f"group-{letter}"}
+    for letter in "abcdefghijklmnopq"
+]
+
+
+def is_hidden(contact):
+    return set(get_tags(contact)) in _HIDDEN_EXACT_TAG_SETS
+
+
 def filter_contacts_by_tags(contacts, required_tags, match_type="any"):
     """Filter contacts against a required tag set.
 

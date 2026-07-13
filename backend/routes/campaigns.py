@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 from extensions import db
 from models import Campaign, CampaignRecipient, Contact
-from services.tags import filter_contacts_by_tags
+from services.tags import filter_contacts_by_tags, is_hidden
 
 campaigns_bp = Blueprint("campaigns", __name__, url_prefix="/api/campaigns")
 
@@ -41,6 +41,7 @@ def audience_count():
     tags = [t for t in tags_param.split(",") if t.strip()]
 
     contacts = Contact.query.filter_by(opted_in=True).all()
+    contacts = [c for c in contacts if not is_hidden(c)]
     matched = filter_contacts_by_tags(contacts, tags, match_type)
     return jsonify({"count": len(matched)})
 

@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, send_file
 from extensions import db
 from models import Contact, ScholarshipApplication, IncomingMessage
+from services.tags import is_hidden
 
 contacts_bp = Blueprint("contacts", __name__, url_prefix="/api/contacts")
 
@@ -16,7 +17,7 @@ def get_contacts():
             "phone": c.phone,
             "opted_in": c.opted_in,
             "tags": c.tags
-        } for c in contacts
+        } for c in contacts if not is_hidden(c)
     ])
 
 # Add a new contact

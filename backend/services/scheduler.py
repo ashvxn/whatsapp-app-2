@@ -7,7 +7,7 @@ from extensions import db
 from models import Campaign, Contact, CampaignRecipient
 from services.whatsapp import send_template, send_text, send_image
 from services.pricing import get_conversation_cost
-from services.tags import filter_contacts_by_tags
+from services.tags import filter_contacts_by_tags, is_hidden
 
 TEMPLATE_LANGUAGES = {
     "short":  "en",
@@ -48,6 +48,7 @@ def process_campaigns(app):
                         match_type = campaign.payload.get("match_type", "any")
 
                         contacts = Contact.query.filter_by(opted_in=True).all()
+                        contacts = [c for c in contacts if not is_hidden(c)]
                         contacts = filter_contacts_by_tags(contacts, tags, match_type)
                         total_campaign_cost = 0.0
                         sent_count = 0
