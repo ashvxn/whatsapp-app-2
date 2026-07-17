@@ -11,6 +11,9 @@ const Icons = {
   ),
   CheckCircle: () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  ),
+  Retry: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
   )
 };
 
@@ -25,6 +28,7 @@ export default function CampaignDetail() {
   const { id } = useParams();
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const navigate = useNavigate();
 
   const fetchDetails = () => {
@@ -39,9 +43,23 @@ export default function CampaignDetail() {
 
   useEffect(() => {
     fetchDetails();
-    const interval = setInterval(fetchDetails, 5000); 
+    const interval = setInterval(fetchDetails, 5000);
     return () => clearInterval(interval);
   }, [id]);
+
+  const retryFailed = async () => {
+    setRetrying(true);
+    try {
+      const res = await api.post(`/campaigns/${id}/retry`);
+      const { sent, failed } = res.data;
+      alert(`Retry complete: ${sent} sent, ${failed} still failed.`);
+      fetchDetails();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error retrying failed sends.");
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   if (loading && !campaign) return <div style={{ display: "flex", justifyContent: "center", padding: "100px" }}><p>Loading campaign details...</p></div>;
   if (!campaign) return null;
@@ -49,9 +67,10 @@ export default function CampaignDetail() {
   const recipients = campaign.recipients || [];
   const payload = campaign.payload || {};
   const stats = {
-    sent: recipients.length,
+    sent: recipients.filter(r => r.status !== 'failed').length,
     delivered: recipients.filter(r => r.status === 'delivered' || r.status === 'read').length,
-    read: recipients.filter(r => r.status === 'read').length
+    read: recipients.filter(r => r.status === 'read').length,
+    failed: recipients.filter(r => r.status === 'failed').length
   };
 
   const isTemplate = !["CUSTOM_TEXT", "CUSTOM_IMAGE"].includes(campaign.template_name);
@@ -71,9 +90,16 @@ export default function CampaignDetail() {
             Campaign ID: <strong>#{campaign.id}</strong> • Template: <strong>{campaign.template_name}</strong>
           </p>
         </div>
-        <span className={`badge badge-${campaign.status || 'unknown'}`} style={{ padding: "6px 16px", fontSize: "12px" }}>
-          {campaign.status}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {stats.failed > 0 && (
+            <button className="btn-outline" style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={retryFailed} disabled={retrying}>
+              <Icons.Retry /> {retrying ? "Retrying..." : `Retry Failed (${stats.failed})`}
+            </button>
+          )}
+          <span className={`badge badge-${campaign.status || 'unknown'}`} style={{ padding: "6px 16px", fontSize: "12px" }}>
+            {campaign.status}
+          </span>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "32px" }}>
@@ -120,7 +146,7 @@ export default function CampaignDetail() {
 
           <div className="card">
             <h3 style={{ fontSize: "16px", marginBottom: "20px" }}>Performance Metrics</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: stats.failed > 0 ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: "16px" }}>
                 <div style={{ textAlign: "center", padding: "16px", background: "var(--bg-main)", borderRadius: "var(--radius)" }}>
                     <div style={{ fontSize: "20px", fontWeight: "700" }}>{stats.sent}</div>
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", marginTop: "4px" }}>Sent</div>
@@ -133,6 +159,12 @@ export default function CampaignDetail() {
                     <div style={{ fontSize: "20px", fontWeight: "700", color: "var(--primary)" }}>{stats.read}</div>
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", marginTop: "4px" }}>Read</div>
                 </div>
+                {stats.failed > 0 && (
+                  <div style={{ textAlign: "center", padding: "16px", background: "var(--bg-main)", borderRadius: "var(--radius)" }}>
+                      <div style={{ fontSize: "20px", fontWeight: "700", color: "#991b1b" }}>{stats.failed}</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", marginTop: "4px" }}>Failed</div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

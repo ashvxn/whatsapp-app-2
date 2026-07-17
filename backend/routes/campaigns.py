@@ -7,6 +7,7 @@ from datetime import datetime
 from extensions import db
 from models import Campaign, CampaignRecipient, Contact
 from services.tags import filter_contacts_by_tags, is_hidden
+from services.scheduler import send_batch
 
 campaigns_bp = Blueprint("campaigns", __name__, url_prefix="/api/campaigns")
 
@@ -85,6 +86,33 @@ def get_campaign(id):
                 "updated_at": r.updated_at.isoformat() if r.updated_at else None
             } for r in recipients
         ]
+    })
+
+# Retry sending to this campaign's failed recipients
+@campaigns_bp.route("/<int:id>/retry", methods=["POST"])
+def retry_campaign(id):
+    campaign = Campaign.query.get_or_404(id)
+    failed_recipients = CampaignRecipient.query.filter_by(campaign_id=id, status="failed").all()
+
+    if not failed_recipients:
+        return jsonify({"message": "No failed recipients to retry"}), 400
+
+    contacts = [r.contact for r in failed_recipients]
+
+    sent_count, failed_count, retry_cost = send_batch(current_app._get_current_object(), campaign, contacts)
+
+    for r in failed_recipients:
+        db.session.delete(r)
+
+    campaign.total_estimated_cost = (campaign.total_estimated_cost or 0.0) + retry_cost
+    still_failed = CampaignRecipient.query.filter_by(campaign_id=id, status="failed").count()
+    campaign.status = "completed" if still_failed == 0 else "partial"
+    db.session.commit()
+
+    return jsonify({
+        "retried": len(contacts),
+        "sent": sent_count,
+        "failed": failed_count
     })
 
 # Delete a campaign
