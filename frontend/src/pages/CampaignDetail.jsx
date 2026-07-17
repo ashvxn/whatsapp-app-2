@@ -92,15 +92,20 @@ export default function CampaignDetail() {
             Campaign ID: <strong>#{campaign.id}</strong> • Template: <strong>{campaign.template_name}</strong>
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {stats.failed > 0 && (
-            <button className="btn-outline" style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={retryFailed} disabled={retrying}>
-              <Icons.Retry /> {retrying ? "Retrying..." : `Retry Failed (${stats.failed})`}
-            </button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {stats.failed > 0 && (
+              <button className="btn-outline" style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={retryFailed} disabled={retrying}>
+                <Icons.Retry /> {retrying ? "Retrying..." : `Retry Failed (${stats.failed})`}
+              </button>
+            )}
+            <span className={`badge badge-${campaign.status || 'unknown'}`} style={{ padding: "6px 16px", fontSize: "12px" }}>
+              {campaign.status}
+            </span>
+          </div>
+          {retryStatus && (
+            <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{retryStatus}</div>
           )}
-          <span className={`badge badge-${campaign.status || 'unknown'}`} style={{ padding: "6px 16px", fontSize: "12px" }}>
-            {campaign.status}
-          </span>
         </div>
       </div>
 
