@@ -29,6 +29,7 @@ export default function CampaignDetail() {
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [retryStatus, setRetryStatus] = useState(null);
   const navigate = useNavigate();
 
   const fetchDetails = () => {
@@ -49,13 +50,14 @@ export default function CampaignDetail() {
 
   const retryFailed = async () => {
     setRetrying(true);
+    setRetryStatus(null);
     try {
       const res = await api.post(`/campaigns/${id}/retry`);
       const { sent, failed } = res.data;
-      alert(`Retry complete: ${sent} sent, ${failed} still failed.`);
-      fetchDetails();
+      setRetryStatus(`Retry complete: ${sent} sent, ${failed} still failed.`);
+      await fetchDetails();
     } catch (err) {
-      alert(err.response?.data?.message || "Error retrying failed sends.");
+      setRetryStatus(err.response?.data?.message || "Error retrying failed sends.");
     } finally {
       setRetrying(false);
     }
